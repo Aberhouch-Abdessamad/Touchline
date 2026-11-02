@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { FavoriteButton } from "@/components/ui/FavoriteButton";
 import { LeagueLogo } from "@/components/ui/Logos";
 import { cn } from "@/lib/utils";
+import { leagueDisplayName, useI18n } from "@/lib/i18n";
+import { formatLabel, genderLabel, regionLabel, typeLabel } from "./labels";
 import type { League } from "@/data/leagues";
 
 /**
@@ -10,8 +14,9 @@ import type { League } from "@/data/leagues";
  * the markup never nests a button inside an anchor.
  */
 export function CompetitionRow({ league }: { league: League }) {
+  const { t, lang } = useI18n();
   const secondary =
-    league.country === league.region ? null : league.region;
+    league.country === league.region ? null : regionLabel(t, league.region);
 
   return (
     <div className="cx-row">
@@ -20,7 +25,9 @@ export function CompetitionRow({ league }: { league: League }) {
           <LeagueLogo src={league.logo} name={league.name} size={26} />
         </span>
         <span className="cx-row__body">
-          <span className="cx-row__name">{league.name}</span>
+          <span className="cx-row__name">
+            {leagueDisplayName(league, lang)}
+          </span>
           <span className="cx-row__meta">
             {league.country}
             {secondary ? (
@@ -32,16 +39,16 @@ export function CompetitionRow({ league }: { league: League }) {
           </span>
         </span>
         <span className="cx-row__tags">
-          <span className="cx-row__tag">
-            {league.type === "club" ? "Club" : "National"}
-          </span>
-          <span className="cx-row__tag">{league.format}</span>
+          <span className="cx-row__tag">{typeLabel(t, league.type)}</span>
+          <span className="cx-row__tag">{formatLabel(t, league.format)}</span>
           {league.gender === "women" ? (
-            <span className={cn("cx-row__tag", "is-women")}>Women</span>
+            <span className={cn("cx-row__tag", "is-women")}>
+              {genderLabel(t, league.gender)}
+            </span>
           ) : null}
         </span>
         <span className="cx-row__arrow" aria-hidden="true">
-          <ArrowUpRight size={14} />
+          <ArrowUpRight size={14} data-flip="rtl" />
         </span>
       </Link>
       <FavoriteButton

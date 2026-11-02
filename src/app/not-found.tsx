@@ -1,34 +1,36 @@
+"use client";
+
 import Link from "next/link";
 import { Compass, Home, Search, Trophy } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 export default function NotFound() {
+  const { t } = useI18n();
+  const notFound = t.content.notFound;
+
   return (
     <div className="error-page">
       <p className="error-page__code" aria-hidden="true">
-        404
+        {notFound.code}
       </p>
-      <h1 className="error-page__title">That page is off the pitch</h1>
-      <p className="error-page__body">
-        The address may be mistyped, or the competition, team or match you were
-        looking for is not in the provider&apos;s index. Try the directory, a
-        search, or today&apos;s fixtures.
-      </p>
+      <h1 className="error-page__title">{notFound.title}</h1>
+      <p className="error-page__body">{notFound.body}</p>
       <div className="error-page__actions">
         <Link href="/matches" className="btn btn--accent">
           <Compass size={16} aria-hidden="true" />
-          Today&apos;s matches
+          {notFound.actions.todays}
         </Link>
         <Link href="/competitions" className="btn btn--ghost">
           <Trophy size={15} aria-hidden="true" />
-          Competitions
+          {t.layout.nav.competitions}
         </Link>
         <Link href="/search" className="btn btn--ghost">
           <Search size={15} aria-hidden="true" />
-          Search
+          {t.layout.nav.search}
         </Link>
         <Link href="/" className="btn btn--ghost">
           <Home size={15} aria-hidden="true" />
-          Home
+          {t.common.home}
         </Link>
       </div>
     </div>

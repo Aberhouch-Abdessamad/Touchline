@@ -4,16 +4,46 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { CheckCircle2, Info, X, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DICT } from "@/lib/i18n/dict";
+import type { Locale } from "@/lib/i18n/core";
 
 type ToastTone = "success" | "error" | "info";
+
+/** Same store as PreferencesProvider; kept literal to avoid a provider cycle. */
+const PREFS_STORAGE_KEY = "touchline.preferences.v1";
+
+function subscribeToStorage(notify: () => void) {
+  window.addEventListener("storage", notify);
+  return () => window.removeEventListener("storage", notify);
+}
+
+/**
+ * The stored UI language, read straight from local storage. ToastProvider sits
+ * *outside* PreferencesProvider (the reverse dependency keeps it circular-
+ * free), so it cannot use the context. Snapshot revalidates on every render —
+ * toasts only exist after user interaction — and the `storage` event covers
+ * cross-tab switches.
+ */
+function storedLang(): Locale {
+  try {
+    const raw = window.localStorage.getItem(PREFS_STORAGE_KEY);
+    return raw && JSON.parse(raw)?.lang === "ar" ? "ar" : "en";
+  } catch {
+    return "en";
+  }
+}
+
+function serverLang(): Locale {
+  return "en";
+}
 
 interface Toast {
   id: number;
@@ -30,6 +60,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const counter = useRef(0);
+  const lang = useSyncExternalStore(subscribeToStorage, storedLang, serverLang);
 
   const dismiss = useCallback((id: number) => {
     setToasts((current) => current.filter((toast) => toast.id !== id));
@@ -72,7 +103,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               type="button"
               className="toast__close"
               onClick={() => dismiss(toast.id)}
-              aria-label="Dismiss notification"
+              aria-label={DICT[lang].common.dismissNotification}
             >
               <X size={16} />
             </button>

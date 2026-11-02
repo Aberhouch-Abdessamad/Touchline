@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePreferences } from "@/components/providers/PreferencesProvider";
+import { LOCALE_CONFIG } from "@/lib/i18n/core";
 import { cn } from "@/lib/utils";
 
 type TimeMode =
@@ -45,7 +46,7 @@ export function LocalTime({
   className,
   fallback = "—",
 }: LocalTimeProps) {
-  const { timeZone } = usePreferences();
+  const { timeZone, lang } = usePreferences();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -53,11 +54,11 @@ export function LocalTime({
   const label = useMemo(() => {
     const value = typeof date === "string" ? new Date(date) : date;
     if (Number.isNaN(value.getTime())) return fallback;
-    return new Intl.DateTimeFormat("en-GB", {
+    return new Intl.DateTimeFormat(LOCALE_CONFIG[lang].intl, {
       ...OPTIONS[mode],
       timeZone,
     }).format(value);
-  }, [date, mode, timeZone, fallback]);
+  }, [date, mode, timeZone, fallback, lang]);
 
   const iso = typeof date === "string" ? date : date.toISOString();
 

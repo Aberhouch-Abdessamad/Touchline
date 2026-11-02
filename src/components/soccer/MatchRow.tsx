@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { TeamLogo } from "@/components/ui/Logos";
 import { LocalTime } from "@/components/ui/LocalTime";
+import { useI18n, leagueDisplayName } from "@/lib/i18n";
+import type { Dict } from "@/lib/i18n/dict";
 import { cn } from "@/lib/utils";
 import type { Match } from "@/lib/types";
 
@@ -16,13 +20,15 @@ function hasScore(match: Match): boolean {
   );
 }
 
-function statusText(match: Match): string {
-  if (isLive(match)) return match.clock || match.statusLabel || "Live";
-  if (match.state === "finished") return "FT";
-  if (match.state === "postponed") return "PSTP";
-  if (match.state === "canceled") return "CANC";
-  if (match.state === "scheduled") return "Scheduled";
-  return match.statusLabel || "Update";
+function statusText(match: Match, common: Dict["common"]): string {
+  if (isLive(match)) {
+    return match.clock || match.statusLabel || common.states.live;
+  }
+  if (match.state === "finished") return common.stateShort.finished;
+  if (match.state === "postponed") return common.stateShort.postponed;
+  if (match.state === "canceled") return common.stateShort.canceled;
+  if (match.state === "scheduled") return common.stateShort.scheduled;
+  return match.statusLabel || common.stateShort.unknown;
 }
 
 export function MatchRow({
@@ -34,21 +40,34 @@ export function MatchRow({
   compact?: boolean;
   showCompetition?: boolean;
 }) {
+  const { t, f, lang } = useI18n();
   const live = isLive(match);
   const scored = hasScore(match);
+  const competition = leagueDisplayName(
+    {
+      slug: match.league?.slug ?? match.competition.slug,
+      name: match.competition.name,
+    },
+    lang,
+  );
 
   return (
     <Link
       href={`/match/${match.id}`}
       className={cn("match-row", compact && "match-row--featured")}
-      aria-label={`${match.home.name} versus ${match.away.name}, ${match.statusLabel || statusText(match)}`}
+      aria-label={f(t.matches.aria.row, {
+        home: match.home.name,
+        away: match.away.name,
+        vs: t.common.vs,
+        status: match.statusLabel || statusText(match, t.common),
+      })}
     >
       <div className="match-row__meta">
         <span className="match-row__time">
-          <LocalTime date={match.date} mode="time" fallback="TBC" />
+          <LocalTime date={match.date} mode="time" fallback={t.common.tbc} />
         </span>
         <span className={cn("match-row__status", live && "is-live")}>
-          {statusText(match)}
+          <span className="u-dir-ltr">{statusText(match, t.common)}</span>
         </span>
       </div>
 
@@ -74,7 +93,7 @@ export function MatchRow({
           <span className="match-row__team-name">{match.away.name}</span>
         </span>
         {showCompetition ? (
-          <span className="small text-muted">{match.competition.name}</span>
+          <span className="small text-muted">{competition}</span>
         ) : null}
       </div>
 
@@ -100,7 +119,7 @@ export function MatchRow({
           </>
         ) : (
           <span className="match-row__kickoff">
-            <LocalTime date={match.date} mode="time" fallback="TBC" />
+            <LocalTime date={match.date} mode="time" fallback={t.common.tbc} />
           </span>
         )}
       </div>

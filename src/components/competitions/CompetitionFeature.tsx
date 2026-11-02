@@ -1,21 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { FavoriteButton } from "@/components/ui/FavoriteButton";
 import { LeagueLogo } from "@/components/ui/Logos";
 import { cn } from "@/lib/utils";
+import { leagueDisplayName, useI18n } from "@/lib/i18n";
+import { formatLabel, genderLabel } from "./labels";
 import type { League } from "@/data/leagues";
-
-function formatLabel(league: League): string {
-  const format =
-    league.format === "cup"
-      ? "Cup"
-      : league.format === "qualifier"
-        ? "Qualifier"
-        : league.format === "friendly"
-          ? "Friendly"
-          : "League";
-  return `${format} · ${league.gender === "women" ? "Women" : "Men"}`;
-}
 
 /** Larger spotlight tile for the competitions readers open most. */
 export function CompetitionFeature({
@@ -25,6 +17,8 @@ export function CompetitionFeature({
   league: League;
   lead?: boolean;
 }) {
+  const { t, lang } = useI18n();
+
   return (
     <div className={cn("cx-feature", lead && "cx-feature--lead")}>
       <Link href={`/competitions/${league.slug}`} className="cx-feature__link">
@@ -34,12 +28,16 @@ export function CompetitionFeature({
           </span>
           <span className="cx-feature__country">{league.country}</span>
         </span>
-        <span className="cx-feature__name">{league.name}</span>
+        <span className="cx-feature__name">
+          {leagueDisplayName(league, lang)}
+        </span>
         <span className="cx-feature__foot">
-          <span className="cx-feature__format">{formatLabel(league)}</span>
+          <span className="cx-feature__format">
+            {formatLabel(t, league.format)} · {genderLabel(t, league.gender)}
+          </span>
           <span className="cx-feature__cta">
-            Open
-            <ArrowUpRight size={13} aria-hidden="true" />
+            {t.competitions.hub.open}
+            <ArrowUpRight size={13} aria-hidden="true" data-flip="rtl" />
           </span>
         </span>
       </Link>

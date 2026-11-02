@@ -6,6 +6,7 @@ import { MatchDayHeader } from "@/components/soccer/MatchDayHeader";
 import { MatchesExplorer } from "@/components/soccer/MatchesExplorer";
 import { EmptyState, Skeleton } from "@/components/ui/Primitives";
 import { RefreshTicker } from "@/components/ui/RefreshTicker";
+import { T } from "@/components/i18n/T";
 import { getAllLeagues, getMatchesByDate } from "@/lib/api";
 import { todayISO } from "@/lib/date";
 import { isIsoDate } from "@/lib/validation";
@@ -135,33 +136,37 @@ async function MatchesContent({ searchParams }: { searchParams: SearchParams }) 
       {failed ? (
         <EmptyState
           icon={<CalendarX2 size={22} />}
-          title="Fixtures could not be loaded"
-          description="ESPN's scoreboard endpoint did not respond. This is usually temporary; the date controls still work."
+          title={<T k="matches.empty.loadErrorTitle" />}
+          description={<T k="matches.empty.loadErrorDescription" />}
           action={{
             href: `/matches?date=${date}`,
-            label: "Try this date again",
+            label: <T k="matches.empty.loadErrorAction" />,
           }}
         />
       ) : matches.length === 0 ? (
         <EmptyState
           icon={<CalendarX2 size={22} />}
-          title="No fixtures on this date"
-          description="Try the next day, jump to the calendar, or browse a competition for its full season schedule."
-          action={{ href: "/calendar", label: "Open the calendar" }}
+          title={<T k="matches.empty.noFixturesTitle" />}
+          description={<T k="matches.empty.noFixturesDescription" />}
+          action={{
+            href: "/calendar",
+            label: <T k="matches.empty.noFixturesAction" />,
+          }}
         >
           <Link href="/competitions" className="btn btn--ghost">
-            Browse competitions
+            <T k="matches.empty.browseCompetitions" />
           </Link>
         </EmptyState>
       ) : (
         <MatchesExplorer matches={matches} />
       )}
 
-      <p className="mc-note mc-note--page">
-        Live scores refresh every 30 seconds while this tab is visible.{" "}
-        {getAllLeagues().length} competitions are tracked; fixtures come from
-        ESPN&apos;s public scoreboard.
-      </p>
+      <T
+        as="p"
+        k="matches.pageNote"
+        vars={{ total: getAllLeagues().length }}
+        className="mc-note mc-note--page"
+      />
     </>
   );
 }

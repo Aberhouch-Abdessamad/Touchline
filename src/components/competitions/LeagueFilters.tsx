@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { seasonLabel, seasonOptions } from "@/lib/date";
+import { useI18n } from "@/lib/i18n";
 
 function useQueryNavigation() {
   const router = useRouter();
@@ -33,13 +34,14 @@ export function SeasonSelect({
   region: string;
 }) {
   const { navigate, pending } = useQueryNavigation();
+  const { t } = useI18n();
   const options = Array.from(
     new Set([season, ...seasonOptions(Math.max(season, defaultSeason), 7)]),
   ).sort((a, b) => b - a);
 
   return (
     <div className="season-select">
-      <label htmlFor="season-select">Season</label>
+      <label htmlFor="season-select">{t.competitions.filters.season}</label>
       <select
         id="season-select"
         value={season}
@@ -60,10 +62,11 @@ export function MonthSelect({
   months,
   value,
 }: {
-  months: Array<{ key: string; label: string; count: number }>;
+  months: Array<{ key: string; count: number }>;
   value: string;
 }) {
   const { navigate, pending } = useQueryNavigation();
+  const { t, d } = useI18n();
 
   return (
     <label className="season-select">
@@ -76,7 +79,7 @@ export function MonthSelect({
           color: "var(--muted)",
         }}
       >
-        Month
+        {t.competitions.filters.month}
       </span>
       <select
         value={value}
@@ -85,14 +88,17 @@ export function MonthSelect({
           const next = event.target.value;
           navigate({ month: next === "all" ? undefined : next });
         }}
-        aria-label="Filter fixtures by month"
+        aria-label={t.competitions.filters.monthAria}
       >
-        <option value="all">All months</option>
-        {months.map((month) => (
-          <option key={month.key} value={month.key}>
-            {month.label} ({month.count})
-          </option>
-        ))}
+        <option value="all">{t.competitions.filters.allMonths}</option>
+        {months.map((month) => {
+          const [year, monthNumber] = month.key.split("-").map(Number);
+          return (
+            <option key={month.key} value={month.key}>
+              {d.monthTitle(year, monthNumber)} ({month.count})
+            </option>
+          );
+        })}
       </select>
     </label>
   );

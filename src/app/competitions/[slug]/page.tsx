@@ -10,20 +10,14 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
-import { LinkTabs } from "@/components/ui/LinkTabs";
-import { LeagueLogo, TeamLogo } from "@/components/ui/Logos";
-import { FavoriteButton } from "@/components/ui/FavoriteButton";
-import { ShareButton } from "@/components/ui/ShareButton";
-import {
-  Badge,
-  EmptyState,
-  SectionHeader,
-  Skeleton,
-} from "@/components/ui/Primitives";
-import { CompetitionCard } from "@/components/soccer/CompetitionCard";
-import { MatchRow } from "@/components/soccer/MatchRow";
-import { MonthSelect, SeasonSelect } from "@/components/competitions/LeagueFilters";
+import { EmptyState, Skeleton } from "@/components/ui/Primitives";
+import { LeagueHero } from "@/components/competitions/LeagueHero";
+import { LeagueTabs } from "@/components/competitions/LeagueTabs";
+import { ScorerList } from "@/components/competitions/ScorerList";
+import { FixturesView } from "@/components/competitions/FixturesView";
+import { RelatedCompetitions } from "@/components/competitions/RelatedCompetitions";
 import { StandingsTable } from "@/components/competitions/StandingsTable";
+import { T } from "@/lib/i18n";
 import {
   defaultSeasonFor,
   findLeague,
@@ -33,8 +27,7 @@ import {
   getStandings,
   resolveSeason,
 } from "@/lib/api";
-import { formatMonthTitle, seasonLabel } from "@/lib/date";
-import { formatNumber } from "@/lib/utils";
+import { seasonLabel } from "@/lib/date";
 import { isIsoMonth } from "@/lib/validation";
 import type { Match, ScorerBoard, StandingGroup } from "@/lib/types";
 
@@ -97,111 +90,6 @@ function LeagueSkeleton() {
   );
 }
 
-function ScorerList({
-  title,
-  caption,
-  scorers,
-  metric,
-}: {
-  title: string;
-  caption: string;
-  scorers: ScorerBoard["goals"];
-  metric: "goals" | "assists";
-}) {
-  return (
-    <section className="scorer-card">
-      <div className="scorer-card__head">
-        <h2 className="scorer-card__title">{title}</h2>
-        <span className="small text-muted">{caption}</span>
-      </div>
-      {scorers.length === 0 ? (
-        <div className="content-card__empty">
-          No players are listed in this leaderboard.
-        </div>
-      ) : (
-        <ol>
-          {scorers.map((scorer) => (
-            <li key={`${metric}-${scorer.playerId}-${scorer.rank}`}>
-              <div className="scorer-row">
-                <span className="scorer-row__rank">{scorer.rank}</span>
-                <div className="scorer-row__player">
-                  <span className="scorer-row__name">{scorer.playerName}</span>
-                  <span className="scorer-row__team">
-                    <TeamLogo
-                      src={scorer.team.logo}
-                      name={scorer.team.name}
-                      size={12}
-                    />
-                    <Link href={`/team/${scorer.team.id}`}>
-                      {scorer.team.shortName || scorer.team.name}
-                    </Link>
-                  </span>
-                </div>
-                <span className="scorer-row__value">
-                  {scorer[metric]}
-                  <span className="scorer-row__meta">
-                    {scorer.appearances ? `${scorer.appearances} apps` : ""}
-                  </span>
-                </span>
-              </div>
-            </li>
-          ))}
-        </ol>
-      )}
-    </section>
-  );
-}
-
-function CompetitionHero({
-  league,
-  season,
-  defaultSeason,
-}: {
-  league: NonNullable<ReturnType<typeof findLeague>>;
-  season: number;
-  defaultSeason: number;
-}) {
-  return (
-    <header className="league-hero">
-      <LeagueLogo src={league.logo} name={league.name} size={62} />
-      <div className="league-hero__text">
-        <p className="kicker">
-          {league.country} · {league.region}
-        </p>
-        <h1 className="league-hero__title">{league.name}</h1>
-        <div className="league-hero__meta">
-          <Badge tone="muted">
-            {league.type === "club" ? "Club competition" : "National teams"}
-          </Badge>
-          <Badge tone="muted">{league.format}</Badge>
-          <Badge tone="muted">
-            {league.gender === "women" ? "Women's football" : "Men's football"}
-          </Badge>
-          {league.youth ? <Badge tone="warning">Youth</Badge> : null}
-          <Badge tone="accent">{seasonLabel(season, league)}</Badge>
-        </div>
-      </div>
-      <div className="league-hero__actions">
-        <SeasonSelect
-          season={season}
-          defaultSeason={defaultSeason}
-          region={league.region}
-        />
-        <FavoriteButton
-          kind="league"
-          item={{
-            slug: league.slug,
-            name: league.name,
-            logo: league.logo ?? undefined,
-          }}
-          withLabel
-        />
-        <ShareButton title={league.name} withLabel />
-      </div>
-    </header>
-  );
-}
-
 async function StandingsPanel({
   league,
   season,
@@ -227,11 +115,11 @@ async function StandingsPanel({
     return (
       <EmptyState
         icon={<LayoutList size={22} />}
-        title="The league table could not be loaded"
-        description="ESPN's standings endpoint did not respond. Tables are usually back within a minute."
+        title={<T k="competitions.detail.errors.tableTitle" />}
+        description={<T k="competitions.detail.errors.tableBody" />}
         action={{
           href: `/competitions/${league.slug}?tab=standings&season=${season}`,
-          label: "Retry the table",
+          label: <T k="competitions.detail.errors.tableRetry" />,
         }}
       />
     );
@@ -241,14 +129,13 @@ async function StandingsPanel({
     return (
       <EmptyState
         icon={<LayoutList size={22} />}
-        title="No table published for this season"
+        title={<T k="competitions.detail.errors.tableUnavailableTitle" />}
         description={
-          reason ??
-          "This competition does not use a league table, or ESPN has not published one for the selected season."
+          reason ?? <T k="competitions.detail.errors.tableUnavailableBody" />
         }
         action={{
           href: `/competitions/${league.slug}?tab=fixtures&season=${season}`,
-          label: "View fixtures instead",
+          label: <T k="competitions.detail.errors.tableUnavailableAction" />,
         }}
       />
     );
@@ -257,9 +144,11 @@ async function StandingsPanel({
   return (
     <>
       <p className="standings-note">
-        Standings are the live table published by ESPN for{" "}
-        <strong>{seasonLabel(season, league)}</strong>. Positions can change
-        while matches are in progress.
+        <T k="competitions.standings.noteFirst" />{" "}
+        <strong>
+          <span className="u-dir-ltr">{seasonLabel(season, league)}</span>
+        </strong>
+        . <T k="competitions.standings.noteLast" />
       </p>
       <StandingsTable groups={groups} />
     </>
@@ -291,11 +180,11 @@ async function ScorersPanel({
     return (
       <EmptyState
         icon={<Trophy size={22} />}
-        title="Player leaders could not be loaded"
-        description="ESPN's statistics endpoint did not respond. Try again shortly."
+        title={<T k="competitions.detail.errors.scorersTitle" />}
+        description={<T k="competitions.detail.errors.scorersBody" />}
         action={{
           href: `/competitions/${league.slug}?tab=scorers&season=${season}`,
-          label: "Retry leaderboards",
+          label: <T k="competitions.detail.errors.scorersRetry" />,
         }}
       />
     );
@@ -305,10 +194,9 @@ async function ScorersPanel({
     return (
       <EmptyState
         icon={<Trophy size={22} />}
-        title="No player leaderboards for this season"
+        title={<T k="competitions.detail.errors.scorersUnavailableTitle" />}
         description={
-          reason ??
-          "Cup and international competitions often do not publish season-long scorer boards."
+          reason ?? <T k="competitions.detail.errors.scorersUnavailableBody" />
         }
       />
     );
@@ -318,21 +206,20 @@ async function ScorersPanel({
     <>
       <div className="scorer-grid">
         <ScorerList
-          title="Top scorers"
-          caption={`${seasonLabel(season, league)} · goals`}
           scorers={board.goals}
           metric="goals"
+          season={season}
+          region={league.region}
         />
         <ScorerList
-          title="Most assists"
-          caption={`${seasonLabel(season, league)} · assists`}
           scorers={board.assists}
           metric="assists"
+          season={season}
+          region={league.region}
         />
       </div>
       <p className="small text-muted" style={{ marginTop: 16 }}>
-        Leaderboards reflect ESPN&apos;s published season statistics. Appearance
-        counts are shown where the provider includes them.
+        <T k="competitions.scorers.footnote" />
       </p>
     </>
   );
@@ -360,22 +247,12 @@ async function FixturesPanel({
     return (
       <EmptyState
         icon={<CalendarDays size={22} />}
-        title="The fixture list could not be loaded"
-        description="ESPN's scoreboard endpoint did not respond for this competition and season."
+        title={<T k="competitions.detail.errors.fixturesTitle" />}
+        description={<T k="competitions.detail.errors.fixturesBody" />}
         action={{
           href: `/competitions/${league.slug}?tab=fixtures&season=${season}`,
-          label: "Retry fixtures",
+          label: <T k="competitions.detail.errors.fixturesRetry" />,
         }}
-      />
-    );
-  }
-
-  if (all.length === 0) {
-    return (
-      <EmptyState
-        icon={<CalendarDays size={22} />}
-        title="No fixtures returned for this season"
-        description={`ESPN does not list a ${seasonLabel(season, league)} schedule for the ${league.name}. Try another season from the selector above.`}
       />
     );
   }
@@ -391,7 +268,6 @@ async function FixturesPanel({
   const months = [...monthCounts.entries()].map(([key, count]) => ({
     key,
     count,
-    label: formatMonthTitle(Number(key.slice(0, 4)), Number(key.slice(5, 7))),
   }));
 
   const filtered = month
@@ -405,80 +281,21 @@ async function FixturesPanel({
     bucket.push(match);
     grouped.set(key, bucket);
   }
+  const groups = [...grouped.entries()].map(([key, matches]) => ({
+    key,
+    matches,
+  }));
 
   return (
-    <>
-      <div className="fixtures-toolbar">
-        <MonthSelect months={months} value={month ?? "all"} />
-        <span className="fixtures-count">
-          {formatNumber(filtered.length)} of {formatNumber(sorted.length)} fixtures
-        </span>
-      </div>
-
-      {filtered.length === 0 ? (
-        <EmptyState
-          icon={<CalendarDays size={22} />}
-          title="No fixtures in this month"
-          description="Choose another month, or reset the filter to see the whole season."
-        />
-      ) : (
-        [...grouped.entries()].map(([key, matches]) => (
-          <section className="match-group" key={key}>
-            <div className="match-group__head">
-              <h2 className="match-group__name">
-                {formatMonthTitle(Number(key.slice(0, 4)), Number(key.slice(5, 7)))}
-              </h2>
-              <span className="small text-muted">
-                {formatNumber(matches.length)} matches
-              </span>
-              <Link
-                href={`/calendar?month=${key}`}
-                className="match-group__link"
-              >
-                Calendar view
-              </Link>
-            </div>
-            <div className="match-list">
-              {matches.map((match) => (
-                <MatchRow key={match.id} match={match} />
-              ))}
-            </div>
-          </section>
-        ))
-      )}
-
-      <p className="small text-muted" style={{ marginTop: 16 }}>
-        Kick-off times are shown in your selected timezone.{" "}
-        <Link href="/settings">Change timezone</Link>.
-      </p>
-    </>
-  );
-}
-
-function RelatedCompetitions({
-  slug,
-  region,
-}: {
-  slug: string;
-  region: string;
-}) {
-  const related = getAllLeagues()
-    .filter((league) => league.region === region && league.slug !== slug)
-    .slice(0, 4);
-  if (related.length === 0) return null;
-  return (
-    <section className="section">
-      <SectionHeader
-        kicker={`More from ${region}`}
-        title="Competitions in the same region"
-        action={{ href: "/competitions", label: "All competitions" }}
-      />
-      <div className="competition-grid">
-        {related.map((league) => (
-          <CompetitionCard key={league.slug} league={league} />
-        ))}
-      </div>
-    </section>
+    <FixturesView
+      league={league}
+      season={season}
+      months={months}
+      groups={groups}
+      total={sorted.length}
+      filteredCount={filtered.length}
+      month={month}
+    />
   );
 }
 
@@ -500,26 +317,22 @@ async function LeagueContent({
   const season = resolveSeason(league, first(query.season));
   const monthValue = first(query.month);
   const month = isIsoMonth(monthValue) ? monthValue : undefined;
+  const related = getAllLeagues()
+    .filter((item) => item.region === league.region && item.slug !== league.slug)
+    .slice(0, 4);
 
   return (
     <>
-      <CompetitionHero
+      <LeagueHero
         league={league}
         season={season}
         defaultSeason={defaultSeason}
       />
 
-      <LinkTabs
-        tabs={[
-          { key: "standings", label: "Table" },
-          { key: "scorers", label: "Scorers" },
-          { key: "fixtures", label: "Fixtures" },
-        ]}
+      <LeagueTabs
         active={tab}
         baseHref={`/competitions/${league.slug}`}
-        params={{ season: String(season) }}
-        ariaLabel="Competition sections"
-        className="league-tabs"
+        season={season}
       />
 
       {tab === "standings" ? (
@@ -535,21 +348,24 @@ async function LeagueContent({
           <Globe2 size={12} aria-hidden="true" /> {league.country}
         </span>
         <span className="small text-muted">
-          <Star size={12} aria-hidden="true" /> Star this competition to pin it
-          on the competitions page
+          <Star size={12} aria-hidden="true" />{" "}
+          <T k="competitions.detail.starHint" />
         </span>
         {league.aliases.length > 0 ? (
           <span className="small text-muted">
-            <Users size={12} aria-hidden="true" /> Also known as{" "}
-            {league.aliases.slice(0, 3).join(", ")}
+            <Users size={12} aria-hidden="true" />{" "}
+            <T
+              k="competitions.detail.alsoKnownAs"
+              vars={{ names: league.aliases.slice(0, 3).join(", ") }}
+            />
           </span>
         ) : null}
         <Link href="/settings" className="small text-muted">
-          Times follow your timezone
+          <T k="competitions.detail.timesNote" />
         </Link>
       </div>
 
-      <RelatedCompetitions slug={league.slug} region={league.region} />
+      <RelatedCompetitions related={related} region={league.region} />
     </>
   );
 }

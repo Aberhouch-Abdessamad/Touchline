@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { Check, Copy, Mail, Send } from "lucide-react";
 import { useToast } from "@/components/providers/ToastProvider";
+import { RichText } from "@/components/pages/RichText";
+import { useI18n } from "@/lib/i18n";
 
 interface FormState {
   name: string;
@@ -14,7 +16,18 @@ interface FormState {
 
 type Errors = Partial<Record<keyof FormState, string>>;
 
-const TOPICS = [
+interface FieldMessages {
+  nameShort: string;
+  nameLong: string;
+  emailInvalid: string;
+  topicInvalid: string;
+  referenceLong: string;
+  messageShort: string;
+  messageLong: string;
+}
+
+/** Stable English select values; the visible labels come from the dictionary. */
+const TOPIC_VALUES = [
   "Data question",
   "Bug report",
   "Competition request",
@@ -23,44 +36,54 @@ const TOPICS = [
   "Something else",
 ] as const;
 
-const EMPTY: FormState = {
-  name: "",
-  email: "",
-  topic: TOPICS[0],
-  reference: "",
-  message: "",
-};
-
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-function validate(values: FormState): Errors {
+function validate(values: FormState, messages: FieldMessages): Errors {
   const errors: Errors = {};
   if (values.name.trim().length < 2) {
-    errors.name = "Please enter at least two characters.";
+    errors.name = messages.nameShort;
   }
   if (values.name.trim().length > 80) {
-    errors.name = "Please keep your name under 80 characters.";
+    errors.name = messages.nameLong;
   }
   if (!EMAIL_PATTERN.test(values.email.trim())) {
-    errors.email = "Enter a valid email address so a reply is possible.";
+    errors.email = messages.emailInvalid;
   }
-  if (!TOPICS.includes(values.topic as (typeof TOPICS)[number])) {
-    errors.topic = "Choose one of the listed topics.";
+  if (!TOPIC_VALUES.includes(values.topic as (typeof TOPIC_VALUES)[number])) {
+    errors.topic = messages.topicInvalid;
   }
   if (values.reference.trim().length > 200) {
-    errors.reference = "Keep the reference under 200 characters.";
+    errors.reference = messages.referenceLong;
   }
   if (values.message.trim().length < 20) {
-    errors.message = "Add a little more detail — at least 20 characters.";
+    errors.message = messages.messageShort;
   }
   if (values.message.trim().length > 1500) {
-    errors.message = "Please keep the message under 1500 characters.";
+    errors.message = messages.messageLong;
   }
   return errors;
 }
 
 export function ContactForm({ contactEmail }: { contactEmail?: string }) {
-  const [values, setValues] = useState<FormState>(EMPTY);
+  const { t, f } = useI18n();
+  const form = t.content.contact.form;
+  const fieldMessages: FieldMessages = {
+    nameShort: form.nameShort,
+    nameLong: form.nameLong,
+    emailInvalid: form.emailInvalid,
+    topicInvalid: form.topicInvalid,
+    referenceLong: form.referenceLong,
+    messageShort: form.messageShort,
+    messageLong: form.messageLong,
+  };
+
+  const [values, setValues] = useState<FormState>({
+    name: "",
+    email: "",
+    topic: TOPIC_VALUES[0],
+    reference: "",
+    message: "",
+  });
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Partial<Record<keyof FormState, boolean>>>({});
   const [composed, setComposed] = useState(false);
@@ -81,29 +104,29 @@ export function ContactForm({ contactEmail }: { contactEmail?: string }) {
     ]
       .filter(Boolean)
       .join("\n");
-    const body = `${header}\n\n${values.message.trim()}\n\n—\nSent from the Touchline contact form`;
+    const body = `${header}\n\n${values.message.trim()}\n\n—\n${form.mailFooter}`;
     return `mailto:${contactEmail}?subject=${encodeURIComponent(
       subject,
     )}&body=${encodeURIComponent(body)}`;
-  }, [contactEmail, values]);
+  }, [contactEmail, values, form.mailFooter]);
 
   const set = (field: keyof FormState) => (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const next = { ...values, [field]: event.target.value };
     setValues(next);
-    if (touched[field]) setErrors(validate(next));
+    if (touched[field]) setErrors(validate(next, fieldMessages));
     setComposed(false);
   };
 
   const blur = (field: keyof FormState) => () => {
     setTouched((current) => ({ ...current, [field]: true }));
-    setErrors(validate(values));
+    setErrors(validate(values, fieldMessages));
   };
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const next = validate(values);
+    const next = validate(values, fieldMessages);
     setErrors(next);
     setTouched({
       name: true,
@@ -113,15 +136,15 @@ export function ContactForm({ contactEmail }: { contactEmail?: string }) {
       message: true,
     });
     if (Object.keys(next).length > 0) {
-      push("Check the highlighted fields before sending.", "error");
+      push(form.toastValidation, "error");
       return;
     }
     if (!contactEmail) {
-      push("No contact address is configured for this deployment.", "error");
+      push(form.toastNoAddress, "error");
       return;
     }
     setComposed(true);
-    window.location.href = mailto;
+    window.location.assign(mailto);
   };
 
   const copyAddress = async () => {
@@ -129,26 +152,21 @@ export function ContactForm({ contactEmail }: { contactEmail?: string }) {
     try {
       await navigator.clipboard.writeText(contactEmail);
       setCopied(true);
-      push("Contact address copied.", "success");
+      push(form.toastCopied, "success");
       window.setTimeout(() => setCopied(false), 2500);
     } catch {
-      push("Could not access the clipboard. Select the address manually.", "error");
+      push(form.toastClipboardFailed, "error");
     }
   };
 
   if (!contactEmail) {
     return (
       <div className="form-card">
-        <h2 className="settings-section__title">Contact is not configured</h2>
+        <h2 className="settings-section__title">{form.notConfigured.title}</h2>
         <p className="settings-row__description" style={{ marginTop: 8 }}>
-          This deployment has no contact address, so the form cannot compose a
-          message. The site owner can enable it by setting{" "}
-          <code>NEXT_PUBLIC_CONTACT_EMAIL</code> and restarting the app.
+          <RichText text={form.notConfigured.body} />
         </p>
-        <p className="form-status form-status--info">
-          The form is intentionally not a fake submission endpoint: nothing is
-          stored on a server, and no email is sent from this page.
-        </p>
+        <p className="form-status form-status--info">{form.notConfigured.note}</p>
       </div>
     );
   }
@@ -157,7 +175,7 @@ export function ContactForm({ contactEmail }: { contactEmail?: string }) {
     <form className="form-card" onSubmit={onSubmit} noValidate>
       <div className="form-grid">
         <div className="field">
-          <label htmlFor="contact-name">Your name</label>
+          <label htmlFor="contact-name">{form.nameLabel}</label>
           <input
             id="contact-name"
             name="name"
@@ -179,7 +197,7 @@ export function ContactForm({ contactEmail }: { contactEmail?: string }) {
         </div>
 
         <div className="field">
-          <label htmlFor="contact-email">Email address</label>
+          <label htmlFor="contact-email">{form.emailLabel}</label>
           <input
             id="contact-email"
             name="email"
@@ -202,7 +220,7 @@ export function ContactForm({ contactEmail }: { contactEmail?: string }) {
         </div>
 
         <div className="field">
-          <label htmlFor="contact-topic">Topic</label>
+          <label htmlFor="contact-topic">{form.topicLabel}</label>
           <select
             id="contact-topic"
             name="topic"
@@ -211,9 +229,9 @@ export function ContactForm({ contactEmail }: { contactEmail?: string }) {
             onBlur={blur("topic")}
             aria-invalid={Boolean(errors.topic)}
           >
-            {TOPICS.map((topic) => (
+            {TOPIC_VALUES.map((topic, index) => (
               <option key={topic} value={topic}>
-                {topic}
+                {form.topics[index]}
               </option>
             ))}
           </select>
@@ -222,7 +240,8 @@ export function ContactForm({ contactEmail }: { contactEmail?: string }) {
 
         <div className="field">
           <label htmlFor="contact-reference">
-            Match or competition <span className="field__hint">(optional)</span>
+            {form.referenceLabel}{" "}
+            <span className="field__hint">{form.optional}</span>
           </label>
           <input
             id="contact-reference"
@@ -232,20 +251,18 @@ export function ContactForm({ contactEmail }: { contactEmail?: string }) {
             onChange={set("reference")}
             onBlur={blur("reference")}
             aria-invalid={Boolean(errors.reference)}
-            placeholder="e.g. Premier League table, 1 Nov"
+            placeholder={form.referencePlaceholder}
             maxLength={200}
           />
           {errors.reference ? (
             <p className="field__error">{errors.reference}</p>
           ) : (
-            <p className="field__hint">
-              A link or page name helps us find the exact data.
-            </p>
+            <p className="field__hint">{form.referenceHint}</p>
           )}
         </div>
 
         <div className="field field--full">
-          <label htmlFor="contact-message">Message</label>
+          <label htmlFor="contact-message">{form.messageLabel}</label>
           <textarea
             id="contact-message"
             name="message"
@@ -258,7 +275,8 @@ export function ContactForm({ contactEmail }: { contactEmail?: string }) {
             required
           />
           <p className="field__hint" id="contact-message-hint">
-            {count}/1500 characters · at least 20
+            <span className="u-dir-ltr">{f(form.messageCounter, { count })}</span> ·{" "}
+            {form.messageCounterMin}
           </p>
           {errors.message ? (
             <p className="field__error">{errors.message}</p>
@@ -269,7 +287,7 @@ export function ContactForm({ contactEmail }: { contactEmail?: string }) {
       <div className="form-actions">
         <button type="submit" className="btn btn--accent">
           <Send size={16} aria-hidden="true" />
-          Open in mail app
+          {form.submit}
         </button>
         <button type="button" className="btn btn--ghost" onClick={copyAddress}>
           {copied ? (
@@ -277,7 +295,7 @@ export function ContactForm({ contactEmail }: { contactEmail?: string }) {
           ) : (
             <Copy size={15} aria-hidden="true" />
           )}
-          {copied ? "Address copied" : "Copy address"}
+          {copied ? form.addressCopied : form.copyAddress}
         </button>
         <span className="small text-muted">
           <Mail size={12} aria-hidden="true" /> {contactEmail}
@@ -286,14 +304,11 @@ export function ContactForm({ contactEmail }: { contactEmail?: string }) {
 
       {composed ? (
         <p className="form-status form-status--ok" role="status">
-          Your mail app should have opened with the message ready to send. If
-          nothing happened, copy the address above and send it manually — this
-          page never sends or stores the message itself.
+          {form.composedStatus}
         </p>
       ) : (
         <p className="form-status form-status--info">
-          This form does not submit to a server. It validates your message and
-          opens it in your own email client, addressed to {contactEmail}.
+          {f(form.infoStatus, { email: contactEmail })}
         </p>
       )}
     </form>

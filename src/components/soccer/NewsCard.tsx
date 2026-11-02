@@ -1,5 +1,8 @@
+"use client";
+
 import { ArrowUpRight, Newspaper } from "lucide-react";
 import { LocalTime } from "@/components/ui/LocalTime";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { NewsArticle } from "@/lib/types";
 
@@ -10,6 +13,8 @@ function StoryMedia({
   article: NewsArticle;
   variant: "default" | "lead";
 }) {
+  const { t } = useI18n();
+
   return (
     <div
       className={cn(
@@ -29,7 +34,7 @@ function StoryMedia({
       ) : (
         <span className="nw-card__placeholder" aria-hidden="true">
           <Newspaper size={variant === "lead" ? 30 : 22} />
-          <em>{article.section ?? "Football"}</em>
+          <em>{article.section ?? t.news.sectionFallback}</em>
         </span>
       )}
       {article.section ? (
@@ -46,6 +51,7 @@ export function NewsCard({
   article: NewsArticle;
   variant?: "default" | "lead";
 }) {
+  const { t } = useI18n();
   const Heading = variant === "lead" ? "h2" : "h3";
 
   const body = (
@@ -56,7 +62,7 @@ export function NewsCard({
           <LocalTime
             date={article.published}
             mode="date"
-            fallback="Date unavailable"
+            fallback={t.news.dateFallback}
           />
           {article.byline ? (
             <span className="nw-card__byline">{article.byline}</span>
@@ -75,8 +81,8 @@ export function NewsCard({
         ) : null}
         {article.url ? (
           <span className="nw-card__foot">
-            Read at ESPN
-            <ArrowUpRight size={13} aria-hidden="true" />
+            {t.news.readAtEspn}
+            <ArrowUpRight size={13} aria-hidden="true" data-flip="rtl" />
           </span>
         ) : null}
       </div>

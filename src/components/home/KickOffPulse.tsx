@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { usePreferences } from "@/components/providers/PreferencesProvider";
-import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
+import { cn, formatNumber } from "@/lib/utils";
 
 const BUCKET_HOURS = 2;
 const BUCKET_COUNT = 24 / BUCKET_HOURS;
@@ -22,7 +22,7 @@ function hourLabel(hour: number): string {
  * runs past midnight is plotted in the order it is played.
  */
 export function KickOffPulse({ kicks }: { kicks: string[] }) {
-  const { timeZone } = usePreferences();
+  const { t, f, timeZone } = useI18n();
 
   const model = useMemo(() => {
     const dates = kicks
@@ -87,7 +87,7 @@ export function KickOffPulse({ kicks }: { kicks: string[] }) {
   }, [kicks, timeZone]);
 
   if (!model) {
-    return <p className="hm-pulse__empty">No kick-off times to chart yet.</p>;
+    return <p className="hm-pulse__empty">{t.home.pulse.empty}</p>;
   }
 
   return (
@@ -95,9 +95,11 @@ export function KickOffPulse({ kicks }: { kicks: string[] }) {
       <div
         className="hm-pulse__bars"
         role="img"
-        aria-label={`${model.total} kick-offs today, busiest between ${hourLabel(
-          model.busiest.from,
-        )} and ${hourLabel(model.busiest.to)}`}
+        aria-label={f(t.home.pulse.aria, {
+          total: formatNumber(model.total),
+          from: hourLabel(model.busiest.from),
+          to: hourLabel(model.busiest.to),
+        })}
       >
         {model.bars.map((bar) => (
           <span
@@ -113,9 +115,13 @@ export function KickOffPulse({ kicks }: { kicks: string[] }) {
                 Math.round((bar.count / model.peak) * 100),
               )}%`,
             }}
-            title={`${hourLabel(bar.from)}–${hourLabel(bar.to)} — ${
-              bar.count
-            } ${bar.count === 1 ? "kick-off" : "kick-offs"}`}
+            title={f(
+              bar.count === 1 ? t.home.pulse.barOne : t.home.pulse.barMany,
+              {
+                range: `${hourLabel(bar.from)}–${hourLabel(bar.to)}`,
+                n: bar.count,
+              },
+            )}
           />
         ))}
       </div>
@@ -127,18 +133,18 @@ export function KickOffPulse({ kicks }: { kicks: string[] }) {
 
       <p className="hm-pulse__note">
         <span>
-          Peak{" "}
-          <strong>
+          {t.home.pulse.peak}{" "}
+          <strong className="u-dir-ltr">
             {hourLabel(model.busiest.from)}–{hourLabel(model.busiest.to)}
           </strong>
         </span>
         <span>
-          First <strong>{model.firstKick}</strong>
+          {t.home.pulse.first} <strong>{model.firstKick}</strong>
         </span>
         <span>
-          Last <strong>{model.lastKick}</strong>
+          {t.home.pulse.last} <strong>{model.lastKick}</strong>
           {model.nextDay ? (
-            <span className="hm-pulse__plus" title="After midnight">
+            <span className="hm-pulse__plus" title={t.home.pulse.afterMidnight}>
               +1
             </span>
           ) : null}

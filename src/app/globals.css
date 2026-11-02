@@ -51,6 +51,55 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* =========================================================
+   Arabic / RTL foundations
+   Cairo Variable pairs with Plus Jakarta Sans and carries
+   full Arabic support; it takes over when <html lang="ar">.
+   ========================================================= */
+html[lang="ar"] {
+  --font-display: "Cairo Variable", "Cairo", "Plus Jakarta Sans Variable",
+    "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Cairo Variable", "Cairo", "Plus Jakarta Sans Variable",
+    "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Directional isolation helpers: wrap numeric/hyphenated values (scores,
+   "15:30", "2025/26", "45'+2") so they never scramble inside RTL flow. */
+.u-dir-ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.u-dir-rtl {
+  direction: rtl;
+  unicode-bidi: isolate;
+}
+
+/* Directional icons (arrows/chevrons) mirror when marked data-flip="rtl". */
+html[dir="rtl"] [data-flip="rtl"] {
+  transform: scaleX(-1);
+}
+
+/* Letter-spacing destroys Arabic letter joining — neutralise it. */
+html[dir="rtl"] * {
+  letter-spacing: 0 !important;
+}
+
+.header-actions .language-toggle {
+  width: auto;
+  min-width: 38px;
+  padding-inline: 8px;
+  font-family: var(--font-body);
+}
+
+.language-toggle__label {
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  font-family: var(--font-body);
+}
+
 [data-theme="dark"] {
   --bg: #0b1310;
   --bg-elevated: #0f1913;
@@ -12542,3 +12591,756 @@ a.article-link:hover .article-link__cta {
     gap: 9px;
   }
 }
+
+/* =========================================================
+   Arabic / RTL mirroring (appended; mirrors physical rules)
+   ========================================================= */
+
+/*
+ * Every rule below is gated by html[dir="rtl"] and mirrors one physical
+ * directional rule from the body of this file, in original file order:
+ * margins/paddings/borders swap sides (the old side resets to 0),
+ * text-align flips, left/right offsets flip (the old side becomes auto),
+ * 4-value border-radius values flip horizontally and translateX/translate
+ * X signs flip. Symmetric rules and logical (flex/grid) properties need no
+ * mirror. LTR behaviour is untouched. Responsive mirrors sit in matching
+ * @media blocks at the end of the section.
+ */
+
+html[dir="rtl"] .skip-link {
+  right: 16px;
+  left: auto;
+}
+
+html[dir="rtl"] .icon-button__badge {
+  left: -3px;
+  right: auto;
+}
+
+html[dir="rtl"] .menu__panel {
+  left: 0;
+  right: auto;
+}
+
+html[dir="rtl"] .menu__item {
+  text-align: right;
+}
+
+html[dir="rtl"] .toast-stack {
+  left: 20px;
+  right: auto;
+}
+
+html[dir="rtl"] .date-nav input[type="date"] {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .filter-bar select,
+html[dir="rtl"] .filter-bar input[type="date"] {
+  padding: 6px 10px 6px 28px;
+}
+
+html[dir="rtl"] .toggle__track::after {
+  right: 2px;
+  left: auto;
+}
+
+html[dir="rtl"] .toggle input:checked + .toggle__track::after {
+  transform: translateX(-13px);
+}
+
+html[dir="rtl"] .match-group__link {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .search-field svg {
+  right: 13px;
+  left: auto;
+}
+
+html[dir="rtl"] .search-field input {
+  padding: 9px 40px 9px 14px;
+}
+
+html[dir="rtl"] .competition-card__text {
+  padding-left: 30px;
+  padding-right: 0;
+}
+
+html[dir="rtl"] .competition-card__star {
+  left: 13px;
+  right: auto;
+}
+
+html[dir="rtl"] .competition-card__arrow {
+  left: 15px;
+  right: auto;
+}
+
+html[dir="rtl"] .competition-card:hover .competition-card__arrow {
+  transform: translate(-2px, -2px);
+}
+
+html[dir="rtl"] .data-table th {
+  text-align: left;
+}
+
+html[dir="rtl"] .data-table th:first-child,
+html[dir="rtl"] .data-table th:nth-child(2) {
+  text-align: right;
+}
+
+html[dir="rtl"] .data-table td {
+  text-align: left;
+}
+
+html[dir="rtl"] .data-table td:first-child,
+html[dir="rtl"] .data-table td:nth-child(2) {
+  text-align: right;
+}
+
+html[dir="rtl"] .data-table .qualified {
+  border-right: 2px solid var(--note-color, transparent);
+  border-left: 0;
+}
+
+html[dir="rtl"] .scorer-row__value {
+  text-align: left;
+}
+
+html[dir="rtl"] .scorer-row__meta {
+  text-align: left;
+}
+
+html[dir="rtl"] .fixtures-toolbar select {
+  padding: 6px 10px 6px 28px;
+}
+
+html[dir="rtl"] .fixtures-count {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .season-select select {
+  padding: 6px 11px 6px 30px;
+}
+
+html[dir="rtl"] .match-utility__actions {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .snapshot-form__tally b {
+  margin-left: 1px;
+  margin-right: 0;
+}
+
+html[dir="rtl"] .snapshot-form__points {
+  text-align: left;
+}
+
+html[dir="rtl"] .fact-list dd {
+  text-align: left;
+}
+
+html[dir="rtl"] .match-timeline__minute {
+  text-align: left;
+}
+
+html[dir="rtl"] .match-legend__team--away {
+  text-align: left;
+}
+
+html[dir="rtl"] .stat-compare__value--away {
+  text-align: left;
+}
+
+html[dir="rtl"] .lineup-card + .lineup-card {
+  border-right: 1px solid var(--line);
+  border-left: 0;
+}
+
+html[dir="rtl"] .lineup-card__formation {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .lineup-player__pos {
+  text-align: left;
+}
+
+/* The chevron is drawn with the physical border-right/border-bottom plus
+   rotate(45deg), so mirroring its border side would repoint the arrow; only
+   the trailing margin is mirrored here. */
+
+html[dir="rtl"] .lineup-subs__summary::after {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .h2h-summary__cell--away {
+  text-align: left;
+}
+
+html[dir="rtl"] .h2h-row__team--home {
+  text-align: left;
+}
+
+html[dir="rtl"] .form-row__date {
+  text-align: left;
+}
+
+html[dir="rtl"] .match-toolbar__count {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .rk-hero::after,
+html[dir="rtl"] .cal-hero::after {
+  left: -70px;
+  right: auto;
+}
+
+html[dir="rtl"] .rk-hero__actions,
+html[dir="rtl"] .cal-hero__actions {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .rk-leader__points span {
+  margin-right: 5px;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .rk-leader__watermark {
+  left: 8px;
+  right: auto;
+}
+
+html[dir="rtl"] .rk-hero__stat + .rk-hero__stat,
+html[dir="rtl"] .cal-hero__stat + .cal-hero__stat {
+  border-right: 1px solid rgba(255, 255, 255, 0.09);
+  border-left: 0;
+}
+
+html[dir="rtl"] .rk-podium__points span {
+  margin-right: 3px;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .rk-filters__label {
+  padding-right: 2px;
+  padding-left: 0;
+}
+
+html[dir="rtl"] .rk-filters__count {
+  margin-right: auto;
+  margin-left: 0;
+  padding-left: 2px;
+  padding-right: 0;
+}
+
+html[dir="rtl"] .rk-table th {
+  text-align: right;
+}
+
+html[dir="rtl"] .cal-grid-card__nav {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .cal-day {
+  border-left: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  border-right: 0;
+}
+
+html[dir="rtl"] .cal-day:nth-child(7n) {
+  border-left: 0;
+}
+
+html[dir="rtl"] .cal-legend__link {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .cal-row__goals {
+  text-align: left;
+}
+
+html[dir="rtl"] .cal-row:hover .cal-row__arrow {
+  transform: translateX(-1px);
+}
+
+html[dir="rtl"] .cal-guide__list {
+  padding: 14px 30px 16px 16px;
+}
+
+html[dir="rtl"] .search-hero__form svg {
+  right: 17px;
+  left: auto;
+}
+
+html[dir="rtl"] .search-hero__input {
+  padding: 13px 48px 13px 120px;
+}
+
+html[dir="rtl"] .search-hero__submit {
+  left: 6px;
+  right: auto;
+}
+
+html[dir="rtl"] .theme-option {
+  text-align: right;
+}
+
+html[dir="rtl"] .settings-row select {
+  padding: 8px 12px 8px 32px;
+}
+
+html[dir="rtl"] .prose ul,
+html[dir="rtl"] .prose ol {
+  padding-right: 20px;
+  padding-left: 0;
+}
+
+html[dir="rtl"] .prose blockquote {
+  border-right: 3px solid var(--accent-strong);
+  border-left: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+html[dir="rtl"] .content-aside nav a {
+  margin-right: -8px;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .api-params th,
+html[dir="rtl"] .api-params td {
+  text-align: right;
+}
+
+html[dir="rtl"] .nw-hero::after {
+  left: -70px;
+  right: auto;
+}
+
+html[dir="rtl"] .nw-hero__actions {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .nw-top__watermark {
+  left: 8px;
+  right: auto;
+}
+
+html[dir="rtl"] .nw-hero__stat + .nw-hero__stat {
+  border-right: 1px solid rgba(255, 255, 255, 0.09);
+  border-left: 0;
+}
+
+html[dir="rtl"] .nw-card__section {
+  right: 10px;
+  left: auto;
+}
+
+html[dir="rtl"] .nw-card__byline {
+  padding-right: 8px;
+  padding-left: 0;
+  border-right: 1px solid var(--line);
+  border-left: 0;
+}
+
+html[dir="rtl"] .site-footer__attribution {
+  text-align: left;
+}
+
+html[dir="rtl"] .mc-hero::after {
+  left: -70px;
+  right: auto;
+}
+
+html[dir="rtl"] .mc-hero__year {
+  margin-right: 0.24em;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .mc-hero__stat + .mc-hero__stat {
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 0;
+}
+
+html[dir="rtl"] .mc-hero__day.is-today .mc-hero__day-num::after {
+  left: -7px;
+  right: auto;
+}
+
+html[dir="rtl"] .mc-hero__jump {
+  margin-right: 4px;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .mc-filters {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .mc-search > svg {
+  right: 11px;
+  left: auto;
+}
+
+html[dir="rtl"] .mc-search input {
+  padding: 0 32px 0 30px;
+}
+
+html[dir="rtl"] .mc-search__clear {
+  left: 5px;
+  right: auto;
+}
+
+html[dir="rtl"] .mc-select select {
+  padding: 0 11px 0 30px;
+}
+
+html[dir="rtl"] .mc-select svg {
+  left: 10px;
+  right: auto;
+}
+
+html[dir="rtl"] .mc-statusline__hint {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .mc-live__all {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .mc-card__score {
+  text-align: left;
+}
+
+html[dir="rtl"] .mc-card__cta {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .mc-group__head {
+  padding: 9px 12px 9px 10px;
+}
+
+html[dir="rtl"] .mc-row.is-live::before {
+  right: 0;
+  left: auto;
+}
+
+html[dir="rtl"] .mc-row__main {
+  padding: 9px 12px 9px 2px;
+}
+
+html[dir="rtl"] .mc-row__score {
+  text-align: left;
+}
+
+html[dir="rtl"] .mc-row__chevron {
+  transform: translateX(3px);
+}
+
+html[dir="rtl"] .mc-row__fav.fav-button {
+  margin-left: 8px;
+  margin-right: 0;
+}
+
+html[dir="rtl"] .mc-toolbar .mc-skel-push {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .cx-stats__note {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .cx-filters {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .cx-search > svg {
+  right: 11px;
+  left: auto;
+}
+
+html[dir="rtl"] .cx-search input {
+  padding: 0 32px 0 30px;
+}
+
+html[dir="rtl"] .cx-search__clear {
+  left: 5px;
+  right: auto;
+}
+
+html[dir="rtl"] .cx-select select {
+  padding: 0 11px 0 30px;
+}
+
+html[dir="rtl"] .cx-select svg {
+  left: 10px;
+  right: auto;
+}
+
+html[dir="rtl"] .cx-statusline__hint {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .cx-spotlight__note {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .cx-feature__top {
+  padding-left: 30px;
+  padding-right: 0;
+}
+
+html[dir="rtl"] .cx-feature__country {
+  text-align: left;
+}
+
+html[dir="rtl"] .cx-feature__star {
+  left: 8px;
+  right: auto;
+}
+
+html[dir="rtl"] .cx-row__link {
+  padding: 10px 12px 10px 6px;
+}
+
+html[dir="rtl"] .cx-row:hover .cx-row__arrow {
+  transform: translate(-2px, -2px);
+}
+
+html[dir="rtl"] .cx-row__star.fav-button {
+  margin-left: 7px;
+  margin-right: 0;
+}
+
+html[dir="rtl"] .hm-mast__meta {
+  text-align: left;
+}
+
+html[dir="rtl"] .hm-glance__stat + .hm-glance__stat {
+  padding-right: 14px;
+  padding-left: 0;
+  border-right: 1px solid var(--line);
+  border-left: 0;
+}
+
+html[dir="rtl"] .hm-pulse__plus {
+  margin-right: 3px;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .hm-live__hint {
+  margin-right: 8px;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .hm-live__list li {
+  border-right: 1px solid var(--line);
+  border-left: 0;
+}
+
+html[dir="rtl"] .hm-live__list li:first-child {
+  border-right: 0;
+}
+
+html[dir="rtl"] .hm-live__comp {
+  padding-left: 44px;
+  padding-right: 0;
+}
+
+html[dir="rtl"] .hm-live__clock {
+  left: 13px;
+  right: auto;
+}
+
+html[dir="rtl"] .hm-live__more {
+  border-right: 1px solid var(--line);
+  border-left: 0;
+}
+
+html[dir="rtl"] .hm-fixture__score {
+  text-align: left;
+}
+
+html[dir="rtl"] .hm-table th {
+  text-align: right;
+}
+
+html[dir="rtl"] .hm-table th:nth-child(3),
+html[dir="rtl"] .hm-table th:last-child {
+  text-align: left;
+}
+
+html[dir="rtl"] .hm-table td:nth-child(3),
+html[dir="rtl"] .hm-table td:last-child {
+  text-align: left;
+}
+
+html[dir="rtl"] .hm-rank__points {
+  text-align: left;
+}
+
+html[dir="rtl"] .hm-story:hover .hm-story__arrow {
+  transform: translate(-1px, -1px);
+}
+
+html[dir="rtl"] .hm-close::after {
+  left: -120px;
+  right: auto;
+}
+
+/* Responsive mirrors (same conditions as their LTR counterparts)
+   ------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  html[dir="rtl"] .header-actions {
+    margin-right: auto;
+    margin-left: 0;
+  }
+
+  html[dir="rtl"] .lineup-card + .lineup-card {
+    border-right: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  html[dir="rtl"] .rk-hero__actions,
+  html[dir="rtl"] .cal-hero__actions {
+    margin-right: auto;
+    margin-left: 0;
+  }
+
+  html[dir="rtl"] .rk-hero__stat + .rk-hero__stat,
+  html[dir="rtl"] .cal-hero__stat + .cal-hero__stat {
+    border-right: 0;
+  }
+
+  html[dir="rtl"] .rk-hero__stat:nth-child(even),
+  html[dir="rtl"] .cal-hero__stat:nth-child(even) {
+    border-right: 1px solid rgba(255, 255, 255, 0.09);
+    border-left: 0;
+  }
+
+  html[dir="rtl"] .rk-filters__count {
+    margin-right: 0;
+    padding: 0 2px 0 6px;
+  }
+
+  html[dir="rtl"] .cal-legend__link {
+    margin-right: 0;
+  }
+
+  html[dir="rtl"] .cal-guide__list {
+    padding: 13px 27px 15px 14px;
+  }
+
+  html[dir="rtl"] .nw-hero__actions {
+    margin-right: auto;
+    margin-left: 0;
+  }
+
+  html[dir="rtl"] .nw-hero__stat + .nw-hero__stat {
+    border-right: 0;
+  }
+
+  html[dir="rtl"] .nw-hero__stat:nth-child(even) {
+    border-right: 1px solid rgba(255, 255, 255, 0.09);
+    border-left: 0;
+  }
+
+  html[dir="rtl"] .match-utility__actions {
+    margin-right: 0;
+  }
+
+  html[dir="rtl"] .date-nav input[type="date"] {
+    margin-right: 0;
+  }
+
+  html[dir="rtl"] .site-footer__attribution {
+    text-align: right;
+  }
+
+  html[dir="rtl"] .match-toolbar__count {
+    margin-right: 0;
+  }
+
+  html[dir="rtl"] .toast-stack {
+    left: 14px;
+    right: auto;
+  }
+
+  html[dir="rtl"] .mc-hero__stat:nth-child(3) {
+    border-right: 0;
+  }
+
+  html[dir="rtl"] .mc-hero__jump {
+    margin-right: 0;
+  }
+
+  html[dir="rtl"] .mc-filters {
+    margin-right: 0;
+  }
+
+  html[dir="rtl"] .mc-live__all {
+    margin-right: 0;
+  }
+
+  html[dir="rtl"] .mc-row__main {
+    padding-right: 11px;
+    padding-left: 0;
+  }
+
+  html[dir="rtl"] .mc-row__fav.fav-button {
+    margin-left: 5px;
+    margin-right: 0;
+  }
+
+  html[dir="rtl"] .cx-filters {
+    margin-right: 0;
+  }
+
+  html[dir="rtl"] .hm-live__list li:first-child {
+    border-right: 0;
+  }
+
+  html[dir="rtl"] .hm-live__more {
+    border-right: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  html[dir="rtl"] .hm-mast__meta {
+    text-align: right;
+  }
+
+  html[dir="rtl"] .hm-close::after {
+    left: -160px;
+    right: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  html[dir="rtl"] .hm-glance__stat + .hm-glance__stat {
+    padding-right: 10px;
+    padding-left: 0;
+  }
+}
+
+/* The RTL foundation (html[lang="ar"] font variables, .u-dir-ltr/.u-dir-rtl utilities, [data-flip] icon flipping and the html[dir="rtl"] letter-spacing reset) lives near the top of this file. */

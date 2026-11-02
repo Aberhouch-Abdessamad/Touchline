@@ -30,10 +30,11 @@ export function formatDate(
   value: string | Date,
   options: Intl.DateTimeFormatOptions = {},
   timeZone = DEFAULT_TIME_ZONE,
+  locale = "en-GB",
 ): string {
   const date = typeof value === "string" ? new Date(value) : value;
   if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -42,10 +43,14 @@ export function formatDate(
   }).format(date);
 }
 
-export function formatTime(value: string | Date, timeZone = DEFAULT_TIME_ZONE): string {
+export function formatTime(
+  value: string | Date,
+  timeZone = DEFAULT_TIME_ZONE,
+  locale = "en-GB",
+): string {
   const date = typeof value === "string" ? new Date(value) : value;
   if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(locale, {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -53,16 +58,33 @@ export function formatTime(value: string | Date, timeZone = DEFAULT_TIME_ZONE): 
   }).format(date);
 }
 
-export function formatDateTime(value: string | Date, timeZone = DEFAULT_TIME_ZONE): string {
-  return `${formatDate(value, { weekday: "short" }, timeZone)} · ${formatTime(value, timeZone)}`;
+export function formatDateTime(
+  value: string | Date,
+  timeZone = DEFAULT_TIME_ZONE,
+  locale = "en-GB",
+): string {
+  return `${formatDate(value, { weekday: "short" }, timeZone, locale)} · ${formatTime(value, timeZone, locale)}`;
 }
 
-export function formatWeekday(value: string | Date, timeZone = DEFAULT_TIME_ZONE): string {
-  return formatDate(value, { weekday: "short", day: undefined, month: undefined, year: undefined }, timeZone);
+export function formatWeekday(
+  value: string | Date,
+  timeZone = DEFAULT_TIME_ZONE,
+  locale = "en-GB",
+): string {
+  return formatDate(
+    value,
+    { weekday: "short", day: undefined, month: undefined, year: undefined },
+    timeZone,
+    locale,
+  );
 }
 
-export function formatMonthTitle(year: number, month: number): string {
-  return new Intl.DateTimeFormat("en-GB", {
+export function formatMonthTitle(
+  year: number,
+  month: number,
+  locale = "en-GB",
+): string {
+  return new Intl.DateTimeFormat(locale, {
     month: "long",
     year: "numeric",
     timeZone: "UTC",

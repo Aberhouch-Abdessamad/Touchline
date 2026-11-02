@@ -25,32 +25,13 @@ import { useToast } from "@/components/providers/ToastProvider";
 import { LeagueLogo, TeamLogo } from "@/components/ui/Logos";
 import { LocalTime } from "@/components/ui/LocalTime";
 import { EmptyState } from "@/components/ui/Primitives";
+import { LOCALE_CONFIG, LOCALES, isLocale, useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-const THEMES: Array<{
-  value: ThemeChoice;
-  label: string;
-  icon: typeof Sun;
-  description: string;
-}> = [
-  {
-    value: "light",
-    label: "Light",
-    icon: Sun,
-    description: "Warm paper background, dark ink.",
-  },
-  {
-    value: "dark",
-    label: "Dark",
-    icon: Moon,
-    description: "Deep green background for night matches.",
-  },
-  {
-    value: "system",
-    label: "System",
-    icon: Monitor,
-    description: "Follow the operating system setting.",
-  },
+const THEMES: Array<{ value: ThemeChoice; icon: typeof Sun }> = [
+  { value: "light", icon: Sun },
+  { value: "dark", icon: Moon },
+  { value: "system", icon: Monitor },
 ];
 
 const FALLBACK_TIMEZONES = [
@@ -186,6 +167,7 @@ function SettingsSkeleton() {
 export function SettingsPanel() {
   const preferences = usePreferences();
   const { push } = useToast();
+  const { t, f, lang, setLang } = useI18n();
   const fileRef = useRef<HTMLInputElement>(null);
   const [zones, setZones] = useState<string[]>([]);
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
@@ -193,6 +175,24 @@ export function SettingsPanel() {
   );
   const [confirmReset, setConfirmReset] = useState(false);
   const [importing, setImporting] = useState(false);
+
+  const themeText: Record<
+    ThemeChoice,
+    { label: string; description: string }
+  > = {
+    light: {
+      label: t.common.theme.light,
+      description: t.settings.panel.appearance.lightDesc,
+    },
+    dark: {
+      label: t.common.theme.dark,
+      description: t.settings.panel.appearance.darkDesc,
+    },
+    system: {
+      label: t.common.theme.system,
+      description: t.settings.panel.appearance.systemDesc,
+    },
+  };
 
   useEffect(() => {
     setZones(supportedTimeZones());
@@ -228,7 +228,7 @@ export function SettingsPanel() {
       const text = await file.text();
       preferences.importPreferences(text);
     } catch {
-      push("That file could not be read. Try exporting a fresh copy.", "error");
+      push(t.settings.panel.data.importReadFailed, "error");
     } finally {
       setImporting(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -246,11 +246,15 @@ export function SettingsPanel() {
   return (
     <div className="settings-grid">
       <SettingsSection
-        title="Appearance"
-        description="Touchline ships with a light editorial theme and a low-glare dark theme. Your choice is stored in this browser only."
+        title={t.settings.panel.appearance.title}
+        description={t.settings.panel.appearance.description}
         icon={<Sun size={15} aria-hidden="true" />}
       >
-        <div className="theme-options" role="group" aria-label="Theme">
+        <div
+          className="theme-options"
+          role="group"
+          aria-label={t.settings.panel.appearance.themeGroup}
+        >
           {THEMES.map((theme) => {
             const Icon = theme.icon;
             const active = preferences.theme === theme.value;
@@ -261,7 +265,7 @@ export function SettingsPanel() {
                 className={cn("theme-option", active && "is-active")}
                 onClick={() => preferences.setTheme(theme.value)}
                 aria-pressed={active}
-                title={theme.description}
+                title={themeText[theme.value].description}
               >
                 <span
                   className={cn(
@@ -277,7 +281,7 @@ export function SettingsPanel() {
                 <span className="theme-option__label">
                   <span className="inline">
                     <Icon size={12} aria-hidden="true" />
-                    {theme.label}
+                    {themeText[theme.value].label}
                   </span>
                   {active ? <Check size={13} aria-hidden="true" /> : null}
                 </span>
@@ -286,21 +290,45 @@ export function SettingsPanel() {
           })}
         </div>
         <p className="small text-muted" style={{ marginTop: 12 }}>
-          The theme is applied immediately and remembered across visits.
+          {t.settings.panel.appearance.note}
         </p>
+        <div className="settings-row" style={{ marginTop: 16 }}>
+          <div className="settings-row__text">
+            <p className="settings-row__title">
+              {t.settings.panel.appearance.languageRowTitle}
+            </p>
+            <p className="settings-row__description">
+              {t.settings.panel.appearance.languageDescription}
+            </p>
+          </div>
+          <select
+            value={lang}
+            onChange={(event) => {
+              if (isLocale(event.target.value)) setLang(event.target.value);
+            }}
+            aria-label={t.settings.panel.appearance.languageRowTitle}
+          >
+            {LOCALES.map((code) => (
+              <option key={code} value={code}>
+                {LOCALE_CONFIG[code].native}
+              </option>
+            ))}
+          </select>
+        </div>
       </SettingsSection>
 
       <SettingsSection
-        title="Time zone"
-        description="Every kick-off time, date label and calendar export follows this zone."
+        title={t.common.timezone}
+        description={t.settings.panel.timezone.description}
         icon={<Clock3 size={15} aria-hidden="true" />}
       >
         <div className="settings-row">
           <div className="settings-row__text">
-            <p className="settings-row__title">Display time zone</p>
+            <p className="settings-row__title">
+              {t.settings.panel.timezone.displayZone}
+            </p>
             <p className="settings-row__description">
-              Detected from your browser as {browserZone()}. Choose any IANA zone
-              to override it.
+              {f(t.settings.panel.timezone.detected, { zone: browserZone() })}
             </p>
           </div>
           <select
@@ -310,7 +338,7 @@ export function SettingsPanel() {
                 event.target.value === browserZone() ? null : event.target.value,
               )
             }
-            aria-label="Display time zone"
+            aria-label={t.settings.panel.timezone.displayZone}
           >
             {zoneOptions.map((zone) => (
               <option key={zone} value={zone}>
@@ -321,10 +349,11 @@ export function SettingsPanel() {
         </div>
         <div className="settings-row">
           <div className="settings-row__text">
-            <p className="settings-row__title">Preview</p>
+            <p className="settings-row__title">{t.settings.panel.timezone.preview}</p>
             <p className="settings-row__description">
-              A typical Saturday 15:00 kick-off, rendered in{" "}
-              <strong>{activeZone}</strong>.
+              {t.settings.panel.timezone.previewPre}{" "}
+              <strong className="u-dir-ltr">{activeZone}</strong>
+              {t.settings.panel.timezone.previewPost}
             </p>
           </div>
           <span className="small text-muted">
@@ -338,32 +367,34 @@ export function SettingsPanel() {
               className="btn btn--ghost btn--sm"
               onClick={() => preferences.setTimezone(null)}
             >
-              Use browser time zone
+              {t.settings.panel.timezone.useBrowser}
             </button>
           </div>
         ) : null}
       </SettingsSection>
 
       <SettingsSection
-        title="Notifications"
-        description="Match reminders rely on the browser Notification API. They only fire while a Touchline tab is open — the calendar export is the reliable backup."
+        title={t.settings.panel.notifications.title}
+        description={t.settings.panel.notifications.description}
         icon={<Bell size={15} aria-hidden="true" />}
       >
         <div className="settings-row">
           <div className="settings-row__text">
-            <p className="settings-row__title">Kick-off alerts</p>
+            <p className="settings-row__title">
+              {t.settings.panel.notifications.alertsTitle}
+            </p>
             <p className="settings-row__description">
-              Permission:{" "}
+              {t.settings.panel.notifications.permissionPre}{" "}
               <strong>
                 {permission === "unsupported"
-                  ? "not supported in this browser"
+                  ? t.settings.panel.notifications.permissionUnsupported
                   : permission === "granted"
-                    ? "granted"
+                    ? t.settings.panel.notifications.permissionGranted
                     : permission === "denied"
-                      ? "blocked for this site"
-                      : "not requested yet"}
+                      ? t.settings.panel.notifications.permissionDenied
+                      : t.settings.panel.notifications.permissionDefault}
               </strong>
-              . Reminders are stored locally and removed once they fire.
+              {t.settings.panel.notifications.permissionPost}
             </p>
           </div>
           <label className="toggle" htmlFor="settings-notifications">
@@ -377,7 +408,7 @@ export function SettingsPanel() {
                   void onEnableNotifications();
                 } else {
                   preferences.setNotifications(false);
-                  push("Kick-off alerts turned off.", "info");
+                  push(t.settings.panel.notifications.toastTurnedOff, "info");
                 }
               }}
             />
@@ -388,7 +419,9 @@ export function SettingsPanel() {
               ) : (
                 <Bell size={12} aria-hidden="true" />
               )}
-              {preferences.notifications ? "Enabled" : "Disabled"}
+              {preferences.notifications
+                ? t.settings.panel.notifications.toggleOn
+                : t.settings.panel.notifications.toggleOff}
             </span>
           </label>
         </div>
@@ -402,32 +435,33 @@ export function SettingsPanel() {
             >
               <BellRing size={14} aria-hidden="true" />
               {permission === "denied"
-                ? "Blocked in browser settings"
-                : "Ask this browser for permission"}
+                ? t.settings.panel.notifications.blockedInSettings
+                : t.settings.panel.notifications.askPermission}
             </button>
           </div>
         ) : null}
         <p className="small text-muted" style={{ marginTop: 14 }}>
-          Notification permission can only be requested from a user gesture, so
-          this button is the place to grant it. You can revoke it at any time in
-          your browser&apos;s site settings.
+          {t.settings.panel.notifications.note}
         </p>
       </SettingsSection>
 
       <SettingsSection
-        title="Favourites"
-        description="Starred teams, competitions and matches are stored in this browser. They power the favourites filter on the match centre and the pinned cards on the competitions page."
+        title={t.common.favourites}
+        description={t.settings.panel.favourites.description}
         icon={<Star size={15} aria-hidden="true" />}
       >
         {favouriteCount === 0 ? (
           <EmptyState
             icon={<Star size={22} />}
-            title="Nothing starred yet"
-            description="Use the star buttons on a match, team or competition page, then return here to manage the list."
-            action={{ href: "/competitions", label: "Browse competitions" }}
+            title={t.settings.panel.favourites.emptyTitle}
+            description={t.settings.panel.favourites.emptyDescription}
+            action={{
+              href: "/competitions",
+              label: t.settings.panel.favourites.browseCompetitions,
+            }}
           >
             <Link href="/matches" className="btn btn--ghost">
-              Today&apos;s matches
+              {t.settings.panel.favourites.todaysMatches}
             </Link>
           </EmptyState>
         ) : (
@@ -435,7 +469,9 @@ export function SettingsPanel() {
             {preferences.favorites.teams.length > 0 ? (
               <div className="favorite-group">
                 <p className="favorite-group__title">
-                  Teams · {preferences.favorites.teams.length}
+                  {f(t.settings.panel.favourites.teamsCount, {
+                    n: preferences.favorites.teams.length,
+                  })}
                 </p>
                 <div className="favorite-list">
                   {preferences.favorites.teams.map((team) => (
@@ -451,13 +487,15 @@ export function SettingsPanel() {
                         <p className="favorite-item__meta">
                           {[team.abbreviation, team.leagueSlug]
                             .filter(Boolean)
-                            .join(" · ") || "Team"}
+                            .join(" · ") || t.settings.panel.favourites.teamFallback}
                         </p>
                       </div>
                       <button
                         type="button"
                         className="favorite-item__remove"
-                        aria-label={`Remove ${team.name} from favourites`}
+                        aria-label={f(t.settings.panel.favourites.removeNamed, {
+                          name: team.name,
+                        })}
                         onClick={() => preferences.toggleTeamFavorite(team)}
                       >
                         <X size={14} aria-hidden="true" />
@@ -471,7 +509,9 @@ export function SettingsPanel() {
             {preferences.favorites.leagues.length > 0 ? (
               <div className="favorite-group">
                 <p className="favorite-group__title">
-                  Competitions · {preferences.favorites.leagues.length}
+                  {f(t.settings.panel.favourites.leaguesCount, {
+                    n: preferences.favorites.leagues.length,
+                  })}
                 </p>
                 <div className="favorite-list">
                   {preferences.favorites.leagues.map((league) => (
@@ -488,12 +528,16 @@ export function SettingsPanel() {
                         >
                           {league.name}
                         </Link>
-                        <p className="favorite-item__meta">Competition</p>
+                        <p className="favorite-item__meta">
+                          {t.settings.panel.favourites.competitionFallback}
+                        </p>
                       </div>
                       <button
                         type="button"
                         className="favorite-item__remove"
-                        aria-label={`Remove ${league.name} from favourites`}
+                        aria-label={f(t.settings.panel.favourites.removeNamed, {
+                          name: league.name,
+                        })}
                         onClick={() => preferences.toggleLeagueFavorite(league)}
                       >
                         <X size={14} aria-hidden="true" />
@@ -507,7 +551,9 @@ export function SettingsPanel() {
             {preferences.favorites.matches.length > 0 ? (
               <div className="favorite-group">
                 <p className="favorite-group__title">
-                  Matches · {preferences.favorites.matches.length}
+                  {f(t.settings.panel.favourites.matchesCount, {
+                    n: preferences.favorites.matches.length,
+                  })}
                 </p>
                 <div className="favorite-list">
                   {preferences.favorites.matches.map((match) => (
@@ -531,7 +577,9 @@ export function SettingsPanel() {
                       <button
                         type="button"
                         className="favorite-item__remove"
-                        aria-label={`Remove ${match.label} from favourites`}
+                        aria-label={f(t.settings.panel.favourites.removeNamed, {
+                          name: match.label,
+                        })}
                         onClick={() => preferences.toggleMatchFavorite(match)}
                       >
                         <X size={14} aria-hidden="true" />
@@ -546,14 +594,13 @@ export function SettingsPanel() {
       </SettingsSection>
 
       <SettingsSection
-        title="Reminders"
-        description="Matches you asked to be reminded about. Each entry disappears after its alert fires, or when you remove it."
+        title={t.settings.panel.reminders.title}
+        description={t.settings.panel.reminders.description}
         icon={<BellRing size={15} aria-hidden="true" />}
       >
         {preferences.reminders.length === 0 ? (
           <div className="content-card__empty">
-            No match reminders are saved. Open any fixture and choose the bell
-            button to add one.
+            {t.settings.panel.reminders.empty}
           </div>
         ) : (
           <div className="favorite-list">
@@ -578,7 +625,9 @@ export function SettingsPanel() {
                 <button
                   type="button"
                   className="favorite-item__remove"
-                  aria-label={`Remove reminder for ${reminder.label}`}
+                  aria-label={f(t.settings.panel.reminders.removeAria, {
+                    name: reminder.label,
+                  })}
                   onClick={() => preferences.removeReminder(reminder.matchId)}
                 >
                   <Trash2 size={14} aria-hidden="true" />
@@ -590,16 +639,17 @@ export function SettingsPanel() {
       </SettingsSection>
 
       <SettingsSection
-        title="Your data"
-        description="Touchline has no accounts and no server-side profile. Everything on this page lives in localStorage under touchline.preferences.v1, so it belongs to this browser."
+        title={t.settings.panel.data.title}
+        description={t.settings.panel.data.description}
         icon={<Download size={15} aria-hidden="true" />}
       >
         <div className="settings-row">
           <div className="settings-row__text">
-            <p className="settings-row__title">Export a copy</p>
+            <p className="settings-row__title">
+              {t.settings.panel.data.exportTitle}
+            </p>
             <p className="settings-row__description">
-              Download a JSON file with your theme, time zone, notification
-              choice, favourites and reminders.
+              {t.settings.panel.data.exportDescription}
             </p>
           </div>
           <button
@@ -608,26 +658,29 @@ export function SettingsPanel() {
             onClick={preferences.exportPreferences}
           >
             <Download size={14} aria-hidden="true" />
-            Export JSON
+            {t.settings.panel.data.exportAction}
           </button>
         </div>
 
         <div className="settings-row">
           <div className="settings-row__text">
-            <p className="settings-row__title">Restore from a file</p>
+            <p className="settings-row__title">
+              {t.settings.panel.data.importTitle}
+            </p>
             <p className="settings-row__description">
-              Import a previously exported file. Unknown or malformed fields are
-              discarded rather than trusted.
+              {t.settings.panel.data.importDescription}
             </p>
           </div>
           <label className="btn btn--ghost btn--sm import-label">
             <Upload size={14} aria-hidden="true" />
-            {importing ? "Reading…" : "Import JSON"}
+            {importing
+              ? t.settings.panel.data.importReading
+              : t.settings.panel.data.importAction}
             <input
               ref={fileRef}
               type="file"
               accept="application/json,.json"
-              aria-label="Import a Touchline preferences JSON file"
+              aria-label={t.settings.panel.data.importAria}
               disabled={importing}
               onChange={(event) => void onImport(event.target.files?.[0])}
             />
@@ -636,10 +689,11 @@ export function SettingsPanel() {
 
         <div className="settings-row">
           <div className="settings-row__text">
-            <p className="settings-row__title">Reset this browser</p>
+            <p className="settings-row__title">
+              {t.settings.panel.data.resetTitle}
+            </p>
             <p className="settings-row__description">
-              Clears the theme, time zone, favourites and reminders stored here.
-              This cannot be undone.
+              {t.settings.panel.data.resetDescription}
             </p>
           </div>
           <div className="data-actions">
@@ -659,14 +713,14 @@ export function SettingsPanel() {
                   }}
                 >
                   <Trash2 size={14} aria-hidden="true" />
-                  Yes, clear everything
+                  {t.settings.panel.data.resetConfirm}
                 </button>
                 <button
                   type="button"
                   className="btn btn--ghost btn--sm"
                   onClick={() => setConfirmReset(false)}
                 >
-                  Cancel
+                  {t.common.cancel}
                 </button>
               </>
             ) : (
@@ -676,7 +730,7 @@ export function SettingsPanel() {
                 onClick={() => setConfirmReset(true)}
               >
                 <RotateCcw size={14} aria-hidden="true" />
-                Reset preferences
+                {t.settings.panel.data.resetAction}
               </button>
             )}
           </div>

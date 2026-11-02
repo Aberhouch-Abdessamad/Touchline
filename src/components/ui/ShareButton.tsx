@@ -2,6 +2,7 @@
 
 import { Share2 } from "lucide-react";
 import { useToast } from "@/components/providers/ToastProvider";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface ShareButtonProps {
@@ -18,6 +19,7 @@ export function ShareButton({
   withLabel = false,
 }: ShareButtonProps) {
   const { push } = useToast();
+  const { t } = useI18n();
 
   const share = async () => {
     const url = window.location.href;
@@ -31,9 +33,9 @@ export function ShareButton({
     }
     try {
       await navigator.clipboard.writeText(url);
-      push("Link copied to clipboard.", "success");
+      push(t.common.shareCopied, "success");
     } catch {
-      push("Could not access the clipboard. Copy the address bar instead.", "error");
+      push(t.matches.share.clipboardError, "error");
     }
   };
 
@@ -42,11 +44,11 @@ export function ShareButton({
       type="button"
       className={cn("icon-button", withLabel && "icon-button--labelled", className)}
       onClick={share}
-      aria-label="Share this page"
-      title="Share this page"
+      aria-label={t.matches.share.page}
+      title={t.matches.share.page}
     >
       <Share2 size={17} aria-hidden="true" />
-      {withLabel ? <span>Share</span> : null}
+      {withLabel ? <span>{t.common.share}</span> : null}
     </button>
   );
 }

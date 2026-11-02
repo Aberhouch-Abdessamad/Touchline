@@ -1,3 +1,4 @@
+import { T } from "../i18n/T";
 import { Skeleton } from "./Primitives";
 
 /**
@@ -14,7 +15,7 @@ export function PageSkeleton({
 }) {
   return (
     <div className="loading-page" aria-hidden="true">
-      <span className="sr-only">Loading content</span>
+      <T k="common.loading" className="sr-only" />
       {header ? (
         <div style={{ marginBottom: 24, display: "grid", gap: 10 }}>
           <Skeleton width={90} height={10} />

@@ -3,6 +3,7 @@
 import { Star } from "lucide-react";
 import { usePreferences } from "@/components/providers/PreferencesProvider";
 import { useToast } from "@/components/providers/ToastProvider";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type {
   FavoriteLeague,
@@ -34,6 +35,7 @@ export function FavoriteButton(props: FavoriteButtonProps) {
   const { kind, item, className, withLabel = false } = props;
   const preferences = usePreferences();
   const { push } = useToast();
+  const { t, f } = useI18n();
 
   const active =
     kind === "team"
@@ -49,12 +51,14 @@ export function FavoriteButton(props: FavoriteButtonProps) {
         ? item.name
         : item.label;
 
+  const label = active ? t.common.favouriteRemove : t.common.favouriteAdd;
+
   const toggle = () => {
     if (kind === "team") preferences.toggleTeamFavorite(item);
     else if (kind === "league") preferences.toggleLeagueFavorite(item);
     else preferences.toggleMatchFavorite(item);
     push(
-      active ? `${name} removed from favourites.` : `${name} added to favourites.`,
+      active ? t.common.favouriteRemoved : t.common.favouriteAdded,
       active ? "info" : "success",
     );
   };
@@ -70,13 +74,17 @@ export function FavoriteButton(props: FavoriteButtonProps) {
       )}
       onClick={toggle}
       aria-pressed={active}
-      aria-label={
-        active ? `Remove ${name} from favourites` : `Add ${name} to favourites`
-      }
-      title={active ? "Remove from favourites" : "Add to favourites"}
+      aria-label={f(t.matches.aria.favourite, { name, label })}
+      title={label}
     >
       <Star size={withLabel ? 16 : 18} aria-hidden="true" />
-      {withLabel ? <span>{active ? "Favourited" : "Favourite"}</span> : null}
+      {withLabel ? (
+        <span>
+          {active
+            ? t.matches.favouriteToggle.active
+            : t.matches.favouriteToggle.inactive}
+        </span>
+      ) : null}
     </button>
   );
 }

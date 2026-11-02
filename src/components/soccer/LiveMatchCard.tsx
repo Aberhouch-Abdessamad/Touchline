@@ -1,24 +1,33 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { LeagueLogo, TeamLogo } from "@/components/ui/Logos";
 import { FavoriteButton } from "@/components/ui/FavoriteButton";
+import { useI18n, leagueDisplayName } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { Match } from "@/lib/types";
-
-function liveLabel(match: Match): string {
-  if (match.state === "halftime") return "Half-time";
-  return match.clock || match.statusLabel || "Live";
-}
 
 /**
  * One live or half-time fixture, presented as a scoreboard card inside the
  * match centre's live band.
  */
 export function LiveMatchCard({ match }: { match: Match }) {
-  const competition = match.league?.name ?? match.competition.name;
+  const { t, f, lang } = useI18n();
+  const competition = leagueDisplayName(
+    {
+      slug: match.league?.slug ?? match.competition.slug,
+      name: match.league?.name ?? match.competition.name,
+    },
+    lang,
+  );
   const competitionLogo =
     match.league?.logo ?? match.competition.logo ?? undefined;
   const venue = match.venue ?? match.city ?? match.round;
+  const live =
+    match.state === "halftime"
+      ? t.common.states.halftime
+      : match.clock || match.statusLabel || t.common.states.live;
 
   return (
     <article className="mc-card">
@@ -38,23 +47,31 @@ export function LiveMatchCard({ match }: { match: Match }) {
           kind="match"
           item={{
             id: match.id,
-            label: `${match.home.name} v ${match.away.name}`,
+            label: f(t.matches.aria.shortLabel, {
+              home: match.home.name,
+              away: match.away.name,
+              vs: t.common.vs,
+            }),
             date: match.date,
           }}
           className="mc-card__fav"
         />
         <span className="mc-card__live">
           <i className="mc-card__dot" aria-hidden="true" />
-          {liveLabel(match)}
+          <span className="u-dir-ltr">{live}</span>
         </span>
       </header>
 
       <Link
         href={`/match/${match.id}`}
         className="mc-card__link"
-        aria-label={`${match.home.name} ${match.home.score ?? 0}, ${
-          match.away.name
-        } ${match.away.score ?? 0}, ${liveLabel(match)}`}
+        aria-label={f(t.matches.aria.scored, {
+          home: match.home.name,
+          homeScore: match.home.score ?? 0,
+          away: match.away.name,
+          awayScore: match.away.score ?? 0,
+          status: live,
+        })}
       >
         <div className="mc-card__body">
           <span
@@ -85,10 +102,12 @@ export function LiveMatchCard({ match }: { match: Match }) {
         </div>
 
         <footer className="mc-card__foot">
-          <span className="mc-card__venue">{venue ?? "Live coverage"}</span>
+          <span className="mc-card__venue">
+            {venue ?? t.matches.card.liveCoverage}
+          </span>
           <span className="mc-card__cta">
-            Match centre
-            <ArrowRight size={12} aria-hidden="true" />
+            {t.matches.hero.eyebrow}
+            <ArrowRight size={12} aria-hidden="true" data-flip="rtl" />
           </span>
         </footer>
       </Link>

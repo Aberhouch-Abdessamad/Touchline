@@ -5,10 +5,13 @@ import { useMemo } from "react";
 import { Star } from "lucide-react";
 import { TeamLogo } from "@/components/ui/Logos";
 import { usePreferences } from "@/components/providers/PreferencesProvider";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { StandingGroup } from "@/lib/types";
 
 function FormStrip({ form }: { form?: string }) {
+  const { t, f } = useI18n();
+  const letters = t.competitions.standings.letters;
   if (!form) return <span className="small text-muted">—</span>;
   const results = form
     .toUpperCase()
@@ -16,8 +19,16 @@ function FormStrip({ form }: { form?: string }) {
     .slice(-5)
     .split("");
   if (results.length === 0) return <span className="small text-muted">—</span>;
+  const shown = results.map((result) =>
+    result === "W" ? letters.W : result === "D" ? letters.D : result === "L" ? letters.L : result,
+  );
   return (
-    <span className="form-strip" aria-label={`Recent form: ${results.join(" ")}`}>
+    <span
+      className="form-strip"
+      aria-label={
+        f(t.competitions.standings.formAria, { form: shown.join(" ") })
+      }
+    >
       {results.map((result, index) => (
         <span
           key={`${result}-${index}`}
@@ -25,7 +36,7 @@ function FormStrip({ form }: { form?: string }) {
             result === "W" ? "form-w" : result === "D" ? "form-d" : "form-l"
           }
         >
-          {result}
+          {shown[index]}
         </span>
       ))}
     </span>
@@ -33,6 +44,8 @@ function FormStrip({ form }: { form?: string }) {
 }
 
 export function StandingsTable({ groups }: { groups: StandingGroup[] }) {
+  const { t, f } = useI18n();
+  const columns = t.competitions.standings.columns;
   const preferences = usePreferences();
   const favouriteTeams = useMemo(
     () => new Set(preferences.favorites.teams.map((team) => team.id)),
@@ -49,22 +62,21 @@ export function StandingsTable({ groups }: { groups: StandingGroup[] }) {
           <div className="table-wrap">
             <table className="data-table">
               <caption className="sr-only">
-                {group.name} standings, including played, won, drawn, lost,
-                goals and points
+                {f(t.competitions.standings.caption, { group: group.name })}
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">Team</th>
-                  <th scope="col">P</th>
-                  <th scope="col">W</th>
-                  <th scope="col">D</th>
-                  <th scope="col">L</th>
-                  <th scope="col">GF</th>
-                  <th scope="col">GA</th>
-                  <th scope="col">GD</th>
-                  <th scope="col">Pts</th>
-                  <th scope="col">Form</th>
+                  <th scope="col">{columns.position}</th>
+                  <th scope="col">{columns.team}</th>
+                  <th scope="col">{columns.played}</th>
+                  <th scope="col">{columns.won}</th>
+                  <th scope="col">{columns.drawn}</th>
+                  <th scope="col">{columns.lost}</th>
+                  <th scope="col">{columns.goalsFor}</th>
+                  <th scope="col">{columns.goalsAgainst}</th>
+                  <th scope="col">{columns.goalDifference}</th>
+                  <th scope="col">{columns.points}</th>
+                  <th scope="col">{columns.form}</th>
                 </tr>
               </thead>
               <tbody>
@@ -81,7 +93,7 @@ export function StandingsTable({ groups }: { groups: StandingGroup[] }) {
                         {isFavourite ? (
                           <Star
                             size={10}
-                            aria-label="Favourite team"
+                            aria-label={t.competitions.standings.favouriteTeam}
                             style={{ marginLeft: 4, display: "inline-block" }}
                           />
                         ) : null}
@@ -108,9 +120,11 @@ export function StandingsTable({ groups }: { groups: StandingGroup[] }) {
                       <td>{entry.goalsFor}</td>
                       <td>{entry.goalsAgainst}</td>
                       <td>
-                        {entry.goalDifference > 0
-                          ? `+${entry.goalDifference}`
-                          : entry.goalDifference}
+                        <span className="u-dir-ltr">
+                          {entry.goalDifference > 0
+                            ? `+${entry.goalDifference}`
+                            : entry.goalDifference}
+                        </span>
                       </td>
                       <td className="points-cell">{entry.points}</td>
                       <td>

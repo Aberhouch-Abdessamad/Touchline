@@ -1,8 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowRight, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import type { MatchState } from "@/lib/types";
+
+/**
+ * Shared presentational primitives. Text can arrive as plain server strings
+ * or as translated nodes (`<T>`), so props are ReactNode-wide.
+ */
 
 export function Badge({
   children,
@@ -26,10 +34,10 @@ export function EmptyState({
   className,
   children,
 }: {
-  title: string;
-  description?: string;
+  title: ReactNode;
+  description?: ReactNode;
   icon?: ReactNode;
-  action?: { href: string; label: string };
+  action?: { href: string; label: ReactNode };
   className?: string;
   children?: ReactNode;
 }) {
@@ -43,7 +51,7 @@ export function EmptyState({
       {action ? (
         <Link href={action.href} className="btn btn--ghost empty-state__action">
           {action.label}
-          <ArrowRight size={16} aria-hidden="true" />
+          <ArrowRight size={16} aria-hidden="true" data-flip="rtl" />
         </Link>
       ) : null}
       {children}
@@ -58,10 +66,10 @@ export function SectionHeader({
   action,
   className,
 }: {
-  kicker?: string;
-  title: string;
-  description?: string;
-  action?: { href: string; label: string };
+  kicker?: ReactNode;
+  title: ReactNode;
+  description?: ReactNode;
+  action?: { href: string; label: ReactNode };
   className?: string;
 }) {
   return (
@@ -76,22 +84,12 @@ export function SectionHeader({
       {action ? (
         <Link href={action.href} className="section-head__link">
           {action.label}
-          <ArrowRight size={16} aria-hidden="true" />
+          <ArrowRight size={16} aria-hidden="true" data-flip="rtl" />
         </Link>
       ) : null}
     </div>
   );
 }
-
-const STATE_LABELS: Record<MatchState, { label: string; tone: string }> = {
-  live: { label: "Live", tone: "live" },
-  halftime: { label: "Half-time", tone: "live" },
-  finished: { label: "Full time", tone: "muted" },
-  scheduled: { label: "Scheduled", tone: "neutral" },
-  postponed: { label: "Postponed", tone: "warning" },
-  canceled: { label: "Cancelled", tone: "warning" },
-  unknown: { label: "Update", tone: "neutral" },
-};
 
 export function StatusPill({
   state,
@@ -99,16 +97,25 @@ export function StatusPill({
   className,
 }: {
   state: MatchState;
-  label?: string;
+  /** Optional override; falls back to the translated state label. */
+  label?: ReactNode;
   className?: string;
 }) {
-  const meta = STATE_LABELS[state] ?? STATE_LABELS.unknown;
+  const { t } = useI18n();
+  const tone =
+    state === "live" || state === "halftime"
+      ? "live"
+      : state === "finished"
+        ? "muted"
+        : state === "postponed" || state === "canceled"
+          ? "warning"
+          : "neutral";
   return (
-    <span className={cn("status-pill", `status-pill--${meta.tone}`, className)}>
+    <span className={cn("status-pill", `status-pill--${tone}`, className)}>
       {(state === "live" || state === "halftime") && (
         <span className="status-pill__dot" aria-hidden="true" />
       )}
-      {label ?? meta.label}
+      {label ?? t.common.states[state]}
     </span>
   );
 }
@@ -139,9 +146,9 @@ export function PageHeader({
   children,
   className,
 }: {
-  eyebrow?: string;
-  title: string;
-  description?: string;
+  eyebrow?: ReactNode;
+  title: ReactNode;
+  description?: ReactNode;
   actions?: ReactNode;
   children?: ReactNode;
   className?: string;

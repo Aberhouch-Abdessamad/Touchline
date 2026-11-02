@@ -16,18 +16,22 @@ import { LiveMatchCard } from "./LiveMatchCard";
 import { EmptyState } from "@/components/ui/Primitives";
 import { LeagueLogo } from "@/components/ui/Logos";
 import { usePreferences } from "@/components/providers/PreferencesProvider";
+import { useI18n, leagueDisplayName } from "@/lib/i18n";
+import type { Dict } from "@/lib/i18n/dict";
 import { compareCompetitions } from "@/lib/leaguePriority";
 import { cn } from "@/lib/utils";
 import type { Match } from "@/lib/types";
 
 type StateFilter = "all" | "live" | "scheduled" | "finished";
 
-const TABS: Array<{ id: StateFilter; label: string }> = [
-  { id: "all", label: "All" },
-  { id: "live", label: "Live" },
-  { id: "scheduled", label: "Upcoming" },
-  { id: "finished", label: "Results" },
-];
+const TAB_IDS: StateFilter[] = ["all", "live", "scheduled", "finished"];
+
+function tabLabel(state: StateFilter, t: Dict): string {
+  if (state === "all") return t.common.all;
+  if (state === "live") return t.common.states.live;
+  if (state === "scheduled") return t.matches.filters.upcoming;
+  return t.matches.filters.results;
+}
 
 const LIVE_PREVIEW = 6;
 const GROUP_PAGE = 10;
@@ -45,10 +49,10 @@ function competitionName(match: Match): string {
   return match.league?.name ?? match.competition.name;
 }
 
-function boardTitle(state: StateFilter): string {
-  if (state === "finished") return "Results by competition";
-  if (state === "scheduled") return "Upcoming by competition";
-  return "Fixtures by competition";
+function boardTitle(state: StateFilter, t: Dict): string {
+  if (state === "finished") return t.matches.board.results;
+  if (state === "scheduled") return t.matches.board.upcoming;
+  return t.matches.board.fixtures;
 }
 
 interface Group {
@@ -61,6 +65,7 @@ interface Group {
 }
 
 export function MatchesExplorer({ matches }: { matches: Match[] }) {
+  const { t, f, lang } = useI18n();
   const preferences = usePreferences();
   const [competition, setCompetition] = useState("all");
   const [state, setState] = useState<StateFilter>("all");
@@ -293,17 +298,21 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
   return (
     <div className="mc-results">
       <div className="mc-toolbar">
-        <div className="mc-tabs" role="group" aria-label="Filter by match state">
-          {TABS.map((tab) => (
+        <div
+          className="mc-tabs"
+          role="group"
+          aria-label={t.matches.filters.ariaTabs}
+        >
+          {TAB_IDS.map((tab) => (
             <button
-              key={tab.id}
+              key={tab}
               type="button"
-              className={cn("mc-tab", state === tab.id && "is-active")}
-              aria-pressed={state === tab.id}
-              onClick={() => changeState(tab.id)}
+              className={cn("mc-tab", state === tab && "is-active")}
+              aria-pressed={state === tab}
+              onClick={() => changeState(tab)}
             >
-              {tab.label}
-              <span className="mc-tab__count">{stateCounts[tab.id]}</span>
+              {tabLabel(tab, t)}
+              <span className="mc-tab__count">{stateCounts[tab]}</span>
             </button>
           ))}
         </div>
@@ -315,15 +324,15 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
               type="search"
               value={query}
               onChange={(event) => changeQuery(event.target.value)}
-              placeholder="Search fixtures"
-              aria-label="Search fixtures"
+              placeholder={t.matches.filters.search}
+              aria-label={t.matches.filters.search}
             />
             {query ? (
               <button
                 type="button"
                 className="mc-search__clear"
                 onClick={() => changeQuery("")}
-                aria-label="Clear search"
+                aria-label={t.matches.filters.clearSearch}
               >
                 <X size={12} aria-hidden="true" />
               </button>
@@ -334,12 +343,14 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
             <select
               value={competition}
               onChange={(event) => changeCompetition(event.target.value)}
-              aria-label="Filter by competition"
+              aria-label={t.matches.filters.competitionAria}
             >
-              <option value="all">All competitions</option>
+              <option value="all">
+                {t.matches.filters.allCompetitions}
+              </option>
               {competitions.map(([key, name]) => (
                 <option key={key} value={key}>
-                  {name}
+                  {leagueDisplayName({ slug: key, name }, lang)}
                 </option>
               ))}
             </select>
@@ -353,13 +364,13 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
             onClick={toggleFavouritesOnly}
           >
             <Star size={13} aria-hidden="true" />
-            Favourites
+            {t.common.favourites}
           </button>
 
           {hasFilters ? (
             <button type="button" className="mc-reset" onClick={resetFilters}>
               <X size={12} aria-hidden="true" />
-              Reset
+              {t.matches.filters.reset}
             </button>
           ) : null}
         </div>
@@ -368,17 +379,19 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
       <p className="mc-statusline" aria-live="polite">
         <span>
           <strong>{resultMatches.length}</strong>{" "}
-          {resultMatches.length === 1 ? "match" : "matches"}
+          {resultMatches.length === 1
+            ? t.matches.statusline.match
+            : t.matches.statusline.matches}
         </span>
         {state === "all" && liveMatches.length > 0 ? (
           <span className="mc-statusline__live">
             <i className="mc-dot" aria-hidden="true" />
-            {liveMatches.length} live
+            {f(t.matches.statusline.live, { count: liveMatches.length })}
           </span>
         ) : null}
         {needle ? <span>· “{query.trim()}”</span> : null}
         <span className="mc-statusline__hint">
-          Kick-offs in your timezone
+          {t.matches.statusline.hint}
         </span>
       </p>
 
@@ -387,15 +400,15 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
           icon={<CalendarX2 size={22} />}
           title={
             favouritesOnly && preferences.hydrated
-              ? "No favourite fixtures in this view"
+              ? t.matches.empty.favTitle
               : needle
-                ? "No fixtures match that search"
-                : "No matches in this view"
+                ? t.matches.empty.searchTitle
+                : t.matches.empty.noneTitle
           }
           description={
             favouritesOnly && preferences.hydrated
-              ? "Star a competition, team or match to build a personal fixture list, then switch this filter on."
-              : "Try another competition or match state, move to a neighbouring day, or clear the filters."
+              ? t.matches.empty.favDescription
+              : t.matches.empty.filteredDescription
           }
         >
           {hasFilters ? (
@@ -404,7 +417,7 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
               className="btn btn--ghost"
               onClick={resetFilters}
             >
-              Clear filters
+              {t.matches.filters.clearFilters}
             </button>
           ) : null}
         </EmptyState>
@@ -415,13 +428,13 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
               <div className="mc-live__head">
                 <span className="mc-live__pill">
                   <i className="mc-card__dot" aria-hidden="true" />
-                  Live now
+                  {t.matches.stats.live}
                 </span>
                 <h2 className="mc-live__title" id="mc-live-title">
-                  {liveMatches.length} in play
+                  {f(t.matches.liveBand.title, { count: liveMatches.length })}
                 </h2>
                 <span className="mc-live__note">
-                  Scores update on their own
+                  {t.matches.liveBand.note}
                 </span>
                 {hiddenLive > 0 ? (
                   <button
@@ -429,8 +442,12 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
                     className="mc-live__all"
                     onClick={() => changeState("live")}
                   >
-                    All live matches
-                    <ArrowRight size={13} aria-hidden="true" />
+                    {t.matches.liveBand.all}
+                    <ArrowRight
+                      size={13}
+                      aria-hidden="true"
+                      data-flip="rtl"
+                    />
                   </button>
                 ) : null}
               </div>
@@ -447,13 +464,17 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
             <section className="mc-board" aria-labelledby="mc-board-title">
               <div className="mc-board__head">
                 <h2 className="mc-board__title" id="mc-board-title">
-                  {boardTitle(state)}
+                  {boardTitle(state, t)}
                 </h2>
                 <span className="mc-board__count">
-                  {groups.length}{" "}
-                  {groups.length === 1 ? "competition" : "competitions"}
+                  {f(
+                    groups.length === 1
+                      ? t.matches.board.countOne
+                      : t.matches.board.count,
+                    { groups: groups.length },
+                  )}
                   {state === "all" && liveMatches.length > 0
-                    ? " · live games above"
+                    ? ` · ${t.matches.board.liveAbove}`
                     : ""}
                 </span>
               </div>
@@ -467,11 +488,18 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
                       ? group.matches
                       : group.matches.slice(0, rowLimit);
                   const hiddenRows = group.matches.length - rows.length;
+                  const displayName = leagueDisplayName(
+                    { slug: group.slug ?? group.key, name: group.name },
+                    lang,
+                  );
                   const subtitle = `${
-                    group.matches.length
-                  } ${group.matches.length === 1 ? "fixture" : "fixtures"}${
-                    group.round ? ` · ${group.round}` : ""
-                  }`;
+                    f(
+                      group.matches.length === 1
+                        ? t.matches.groups.subOne
+                        : t.matches.groups.sub,
+                      { n: group.matches.length },
+                    )
+                  }${group.round ? ` · ${group.round}` : ""}`;
 
                   return (
                     <section
@@ -500,10 +528,10 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
                           >
                             {group.slug ? (
                               <Link href={`/competitions/${group.slug}`}>
-                                {group.name}
+                                {displayName}
                               </Link>
                             ) : (
-                              group.name
+                              displayName
                             )}
                           </h3>
                           <span className="mc-group__sub">{subtitle}</span>
@@ -514,8 +542,12 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
                             href={`/competitions/${group.slug}`}
                             className="mc-group__link"
                           >
-                            Table &amp; fixtures
-                            <ArrowUpRight size={12} aria-hidden="true" />
+                            {t.matches.groups.link}
+                            <ArrowUpRight
+                              size={12}
+                              aria-hidden="true"
+                              data-flip="rtl"
+                            />
                           </Link>
                         ) : null}
                         <button
@@ -525,8 +557,12 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
                           onClick={() => toggleCollapsed(group.key)}
                           aria-label={
                             collapsed
-                              ? `Show ${group.name} fixtures`
-                              : `Hide ${group.name} fixtures`
+                              ? f(t.matches.groups.ariaShow, {
+                                  name: displayName,
+                                })
+                              : f(t.matches.groups.ariaHide, {
+                                  name: displayName,
+                                })
                           }
                         >
                           <ChevronDown size={16} aria-hidden="true" />
@@ -544,7 +580,9 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
                               className="mc-group__more"
                               onClick={() => toggleExpanded(group.key)}
                             >
-                              Show all {group.matches.length} fixtures
+                              {f(t.matches.groups.showAll, {
+                                n: group.matches.length,
+                              })}
                               <ChevronDown size={14} aria-hidden="true" />
                             </button>
                           ) : null}
@@ -554,7 +592,7 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
                               className="mc-group__more is-collapse"
                               onClick={() => toggleExpanded(group.key)}
                             >
-                              Show fewer
+                              {t.common.showLess}
                               <ChevronDown size={14} aria-hidden="true" />
                             </button>
                           ) : null}
@@ -572,11 +610,14 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
                     className="mc-loadmore__button"
                     onClick={() => setGroupLimit((value) => value + GROUP_PAGE)}
                   >
-                    Show more competitions
+                    {t.matches.loadMore.button}
                     <ChevronDown size={14} aria-hidden="true" />
                   </button>
                   <span className="mc-loadmore__meta">
-                    {visibleGroups.length} of {groups.length} shown
+                    {f(t.matches.loadMore.meta, {
+                      visible: visibleGroups.length,
+                      total: groups.length,
+                    })}
                   </span>
                 </div>
               ) : null}
@@ -585,9 +626,7 @@ export function MatchesExplorer({ matches }: { matches: Match[] }) {
         </>
       )}
 
-      <p className="mc-note">
-        Favourites live in this browser only — nothing is sent to a server.
-      </p>
+      <p className="mc-note">{t.matches.note}</p>
     </div>
   );
 }

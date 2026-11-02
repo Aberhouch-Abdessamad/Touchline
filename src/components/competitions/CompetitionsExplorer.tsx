@@ -13,19 +13,23 @@ import { CompetitionFeature } from "./CompetitionFeature";
 import { CompetitionRow } from "./CompetitionRow";
 import { EmptyState } from "@/components/ui/Primitives";
 import { usePreferences } from "@/components/providers/PreferencesProvider";
+import { useI18n } from "@/lib/i18n";
+import type { Dict } from "@/lib/i18n/dict";
 import { cn } from "@/lib/utils";
+import { regionLabel } from "./labels";
 import type { League } from "@/data/leagues";
 
 const ALL = "all";
 
 type Collection = "all" | "club" | "national" | "cup" | "women";
+type CollectionKey = keyof Dict["competitions"]["hub"]["collections"];
 
-const COLLECTIONS: Array<{ id: Collection; label: string }> = [
-  { id: "all", label: "All" },
-  { id: "club", label: "Clubs" },
-  { id: "national", label: "National" },
-  { id: "cup", label: "Cups" },
-  { id: "women", label: "Women" },
+const COLLECTIONS: Array<{ id: Collection; labelKey?: CollectionKey }> = [
+  { id: "all" },
+  { id: "club", labelKey: "club" },
+  { id: "national", labelKey: "national" },
+  { id: "cup", labelKey: "cup" },
+  { id: "women", labelKey: "women" },
 ];
 
 /** Editorial order for the region sections. */
@@ -62,6 +66,7 @@ function RegionSection({
   cap: number | null;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const { t, f } = useI18n();
   const headingId = `cx-region-${region.toLowerCase().replaceAll(" ", "-")}`;
   const listId = `${headingId}-list`;
   const collapsible = cap !== null && leagues.length > cap;
@@ -71,7 +76,7 @@ function RegionSection({
     <section className="cx-section" aria-labelledby={headingId}>
       <header className="cx-section__head">
         <h2 className="cx-section__title" id={headingId}>
-          {region}
+          {regionLabel(t, region)}
         </h2>
         <span className="cx-section__count">{leagues.length}</span>
         <span className="cx-section__rule" aria-hidden="true" />
@@ -91,7 +96,9 @@ function RegionSection({
           aria-controls={listId}
           onClick={() => setExpanded((value) => !value)}
         >
-          {expanded ? "Show fewer" : `Show all ${leagues.length}`}
+          {expanded
+            ? t.common.showLess
+            : f(t.competitions.hub.showAll, { n: leagues.length })}
           <ChevronDown size={13} aria-hidden="true" />
         </button>
       ) : null}
@@ -115,6 +122,8 @@ function matchesCollection(league: League, collection: Collection): boolean {
 }
 
 export function CompetitionsExplorer({ leagues }: { leagues: League[] }) {
+  const { t, f } = useI18n();
+  const hub = t.competitions.hub;
   const preferences = usePreferences();
   const [query, setQuery] = useState("");
   const [collection, setCollection] = useState<Collection>("all");
@@ -231,7 +240,7 @@ export function CompetitionsExplorer({ leagues }: { leagues: League[] }) {
         <div
           className="cx-tabs"
           role="group"
-          aria-label="Filter competitions by category"
+          aria-label={hub.collectionsAria}
         >
           {COLLECTIONS.map((item) => (
             <button
@@ -244,7 +253,9 @@ export function CompetitionsExplorer({ leagues }: { leagues: League[] }) {
               aria-pressed={collection === item.id}
               onClick={() => changeCollection(item.id)}
             >
-              {item.label}
+              {item.labelKey
+                ? hub.collections[item.labelKey]
+                : t.common.all}
               <span className="cx-tab__count">{counts[item.id]}</span>
             </button>
           ))}
@@ -257,15 +268,15 @@ export function CompetitionsExplorer({ leagues }: { leagues: League[] }) {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search competitions"
-              aria-label="Search competitions"
+              placeholder={hub.searchPlaceholder}
+              aria-label={hub.searchPlaceholder}
             />
             {query ? (
               <button
                 type="button"
                 className="cx-search__clear"
                 onClick={() => setQuery("")}
-                aria-label="Clear search"
+                aria-label={hub.searchClearAria}
               >
                 <X size={12} aria-hidden="true" />
               </button>
@@ -276,12 +287,12 @@ export function CompetitionsExplorer({ leagues }: { leagues: League[] }) {
             <select
               value={region}
               onChange={(event) => changeRegion(event.target.value)}
-              aria-label="Filter by region"
+              aria-label={hub.regionAria}
             >
-              <option value={ALL}>All regions</option>
+              <option value={ALL}>{t.competitions.filters.allRegions}</option>
               {regions.map((name) => (
                 <option key={name} value={name}>
-                  {name}
+                  {regionLabel(t, name)}
                 </option>
               ))}
             </select>
@@ -295,13 +306,13 @@ export function CompetitionsExplorer({ leagues }: { leagues: League[] }) {
             onClick={() => setFavouritesOnly((value) => !value)}
           >
             <Star size={13} aria-hidden="true" />
-            Favourites
+            {t.common.favourites}
           </button>
 
           {hasFilters ? (
             <button type="button" className="cx-reset" onClick={reset}>
               <X size={12} aria-hidden="true" />
-              Reset
+              {hub.reset}
             </button>
           ) : null}
         </div>
@@ -310,14 +321,14 @@ export function CompetitionsExplorer({ leagues }: { leagues: League[] }) {
       <p className="cx-statusline" aria-live="polite">
         <span>
           <strong>{filtered.length}</strong>{" "}
-          {filtered.length === 1 ? "competition" : "competitions"}
+          {filtered.length === 1 ? hub.resultsOne : hub.resultsMany}
         </span>
-        {region !== ALL ? <span>· {region}</span> : null}
-        {needle ? <span>· “{query.trim()}”</span> : null}
+        {region !== ALL ? <span>· {regionLabel(t, region)}</span> : null}
+        {needle ? <span>{f(hub.searchTerm, { q: query.trim() })}</span> : null}
         <span className="cx-statusline__hint">
           {favouritesOnly && preferences.hydrated
-            ? "Starred in this browser"
-            : `${groups.length} ${groups.length === 1 ? "region" : "regions"} · tables, fixtures & scorer boards`}
+            ? hub.starredHint
+            : `${groups.length} ${groups.length === 1 ? hub.groupsOne : hub.groupsMany}`}
         </span>
       </p>
 
@@ -326,18 +337,18 @@ export function CompetitionsExplorer({ leagues }: { leagues: League[] }) {
           icon={<CalendarX2 size={22} />}
           title={
             favouritesOnly && preferences.hydrated
-              ? "No favourite competitions yet"
-              : "No competitions match these filters"
+              ? hub.emptyFavouritesTitle
+              : hub.emptyFiltersTitle
           }
           description={
             favouritesOnly && preferences.hydrated
-              ? "Star any competition to pin it here. Favourites stay in this browser."
-              : "Try a shorter search, another region, or a different category."
+              ? hub.emptyFavouritesBody
+              : hub.emptyFiltersBody
           }
         >
           {hasFilters ? (
             <button type="button" className="btn btn--ghost" onClick={reset}>
-              Clear filters
+              {hub.clearFilters}
             </button>
           ) : null}
         </EmptyState>
@@ -351,14 +362,13 @@ export function CompetitionsExplorer({ leagues }: { leagues: League[] }) {
               <div className="cx-spotlight__head">
                 <span className="cx-spotlight__pill">
                   <Sparkles size={12} aria-hidden="true" />
-                  Start here
+                  {hub.spotlight.pill}
                 </span>
                 <h2 className="cx-spotlight__title" id="cx-spotlight-title">
-                  The competitions that matter most
+                  {hub.spotlight.title}
                 </h2>
                 <span className="cx-spotlight__note">
-                  Top leagues and the Champions League, one click from every
-                  table and fixture.
+                  {hub.spotlight.note}
                 </span>
               </div>
 
@@ -385,10 +395,7 @@ export function CompetitionsExplorer({ leagues }: { leagues: League[] }) {
         </>
       )}
 
-      <p className="cx-note">
-        Competition metadata is cached from ESPN&apos;s public league API. Tables,
-        fixtures and scorer boards load when you open a competition.
-      </p>
+      <p className="cx-note">{hub.note}</p>
     </div>
   );
 }

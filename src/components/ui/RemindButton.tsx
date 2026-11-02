@@ -3,6 +3,7 @@
 import { Bell, BellOff, BellRing } from "lucide-react";
 import { usePreferences } from "@/components/providers/PreferencesProvider";
 import { useToast } from "@/components/providers/ToastProvider";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface RemindButtonProps {
@@ -20,12 +21,13 @@ export function RemindButton({
 }: RemindButtonProps) {
   const preferences = usePreferences();
   const { push } = useToast();
+  const { t } = useI18n();
   const active = preferences.hasReminder(matchId);
 
   const onClick = async () => {
     if (active) {
       preferences.removeReminder(matchId);
-      push("Match reminder removed.", "info");
+      push(t.common.reminderRemoved, "info");
       return;
     }
 
@@ -34,15 +36,12 @@ export function RemindButton({
     if (!preferences.notifications) {
       const enabled = await preferences.enableNotifications();
       if (!enabled) {
-        push(
-          "Reminder saved. Add a calendar event too — browser alerts need notification permission.",
-          "info",
-        );
+        push(t.matches.remind.toastFallback, "info");
         return;
       }
     }
 
-    push("Reminder saved for this browser.", "success");
+    push(t.matches.remind.toastSaved, "success");
   };
 
   return (
@@ -54,10 +53,10 @@ export function RemindButton({
       aria-pressed={active}
       title={
         disabled
-          ? "This match has already started"
+          ? t.matches.remind.titleStarted
           : active
-            ? "Remove the kick-off reminder"
-            : "Alert me at kick-off"
+            ? t.matches.remind.titleRemove
+            : t.matches.remind.titleAdd
       }
     >
       {disabled ? (
@@ -67,7 +66,7 @@ export function RemindButton({
       ) : (
         <Bell size={17} aria-hidden="true" />
       )}
-      <span>{active ? "Reminder set" : "Remind me"}</span>
+      <span>{active ? t.common.reminderOn : t.common.remind}</span>
     </button>
   );
 }

@@ -1,0 +1,368 @@
+import { defineDomain } from "../define";
+
+/**
+ * Home (matchday front page) translations: masthead, lead spotlight, the day
+ * glance, live rail, fixture board, context cards, news rail and closing band.
+ * Competition names, team data, clocks and scores live in the data feeds —
+ * only editorial wording belongs here.
+ */
+export const home = defineDomain({
+  en: {
+    masthead: {
+      flag: "Matchday front page",
+      loading: "Reading today's card",
+      catchingUp: "Scoreboard catching up",
+      titleLead: "Today's football,",
+      titleAccent: " ordered by what matters.",
+      lede: "Live scores, league tables and the day's stories in one editorial read. The big five European leagues lead, with the Saudi Pro League and every other competition right behind them.",
+      leadAria: "Today's lead match",
+      jumpAria: "Matchday shortcuts",
+      jumpLabel: "Jump to",
+      matchCentre: "Match centre",
+    },
+    lead: {
+      matchOfTheDay: "Match of the day",
+      openTeam: "Open {team}",
+      record: "Record",
+      homeSide: "Home side",
+      awaySide: "Away side",
+      kickoffToday: "Kick-off today",
+      kickoffLabel: "Kick-off",
+      yourTime: "your time",
+      openMatchCentre: "Open match centre",
+      scoreAria: "Score {home} to {away}",
+      espnNote: "Fixture details from ESPN",
+      formAria: "{team} recent form: {results}",
+      notices: {
+        failed: {
+          title: "Today's scoreboard has not arrived.",
+          copy: "ESPN did not answer the daily scoreboard request. Tables, rankings and the news wire keep working while scores recover.",
+          primary: "Try the match centre",
+          secondary: "Browse the calendar",
+        },
+        empty: {
+          title: "No fixtures on today's card.",
+          copy: "There is no football on the tracked scoreboard today. The calendar has the rest of the month, competition by competition.",
+          primary: "Open the calendar",
+          secondary: "Browse competitions",
+        },
+      },
+    },
+    glance: {
+      kicker: "The day",
+      title: "The day in brief",
+      stats: {
+        fixtures: "Fixtures",
+        goals: "Goals",
+        competitions: "Competitions",
+      },
+      pulseLabel: "When the card lands",
+      offline:
+        "The daily scoreboard is offline, so today has no shape to plot yet. Fixtures return with the feed.",
+      empty:
+        "No kick-offs on the tracked card today — the calendar has the rest of the month.",
+      matchCentreLink: "Full match centre",
+      timesZone: "Times in your zone",
+    },
+    live: {
+      label: "Live now",
+      countOne: "{n} match in play",
+      countMore: "{n} matches in play",
+      scroll: "Scroll",
+      cardAria: "{home} versus {away}, {clock}",
+      viewAll: "All live",
+    },
+    board: {
+      kicker: "The fixture board",
+      title: "Today's card",
+      description:
+        "Every competition still to play or already finished, grouped and ranked — the big five leagues first, then the Saudi Pro League, then the rest.",
+      toCome: "to come",
+      played: "played",
+      allFixtures: "All fixtures",
+      offlineTitle: "Today's scoreboard is unavailable",
+      offlineCopy:
+        "ESPN did not respond for the daily scoreboard. Tables, rankings and the news wire keep working while scores recover.",
+      offlineAction: "Try the match centre",
+      noneTitle: "No fixtures listed for today",
+      noneCopy:
+        "There is no football on the tracked scoreboard today. The calendar has the rest of the month.",
+      noneAction: "Browse the calendar",
+      allShown:
+        "Everything on today's card is already on this page — the lead match is above, the rest is in play.",
+      matchCentreLink: "Open the match centre",
+      moreInGroup: "+{n} more in this competition",
+      remainingOne: "{n} more competition on today's card.",
+      remaining: "{n} more competitions on today's card.",
+    },
+    table: {
+      kicker: "Table watch",
+      fallbackTitle: "The busiest table today",
+      fallbackSub: "A live table from the competition with the fullest card.",
+      noGames:
+        "No tracked competition is playing today, so there is no table to put in context.",
+      browse: "Browse every table",
+      title: "{abbr} standings",
+      fixtureOne: "{n} fixture today",
+      fixtures: "{n} fixtures today",
+      offlineCopy:
+        "ESPN did not return a table for {abbr} just now. Tables update independently of scores, so this usually recovers.",
+      offlineAction: "Try the competition page",
+      emptyCopy: "ESPN has not published a table for {abbr} {season} yet.",
+      emptyAction: "Open the competition",
+      caption: "Top five of the {league} table for {season}",
+      headers: {
+        rank: "#",
+        team: "Team",
+        played: "P",
+        points: "Pts",
+      },
+      open: "Full table",
+      today: "{n} today",
+    },
+    rankings: {
+      kicker: "World order",
+      title: "FIFA men's top five",
+      official: "Official ranking",
+      published: "published",
+      offlineCopy:
+        "The FIFA public API did not respond. The ranking is unchanged — only the connection is missing.",
+      offlineAction: "Try the ranking page",
+      emptyCopy: "FIFA has not published a ranking yet.",
+      emptyAction: "Open rankings",
+      full: "Full FIFA rankings",
+      teamCount: "{n} teams",
+      move: {
+        noChange: "No change",
+        up: "Up {n}",
+        down: "Down {n}",
+      },
+    },
+    context: {
+      sectionAria: "Today in context",
+      kicker: "The day in context",
+      title: "Two numbers worth knowing",
+      description:
+        "A live table from the competition with the busiest card today, and the top of the official FIFA men's ranking.",
+    },
+    news: {
+      wireAria: "News from the wire",
+      kicker: "From the wire",
+      title: "The stories behind the scores",
+      description:
+        "Headlines surfaced by ESPN's public news feed. Every link opens the original publisher.",
+      allStories: "All stories",
+      offlineTitle: "The news feed is unavailable",
+      offlineCopy:
+        "ESPN's news endpoint did not respond. Scores, tables and fixtures are unaffected.",
+      noneTitle: "No stories published right now",
+      noneCopy:
+        "Check back later — the rest of Touchline keeps working without the news feed.",
+      fallbackLabel: "Touchline wire",
+      topStory: "Top story",
+      sectionFallback: "Football",
+      readAtPublisher: "Read at publisher",
+      dateUnavailable: "Date unavailable",
+    },
+    close: {
+      kicker: "Your matchday, your clock",
+      titleLead: "Never miss another",
+      titleAccent: "kick-off.",
+      lede: "Pick your timezone, follow the teams you care about and send any fixture to the calendar you already use. Preferences stay in this browser.",
+      setPreferences: "Set preferences",
+      openCalendar: "Open calendar",
+      competitions: "{n} competitions",
+      fifa: "FIFA men's & women's",
+      calendarExports: "ICS & Google Calendar",
+    },
+    pulse: {
+      empty: "No kick-off times to chart yet.",
+      aria: "{total} kick-offs today, busiest between {from} and {to}",
+      barOne: "{range} — 1 kick-off",
+      barMany: "{range} — {n} kick-offs",
+      peak: "Peak",
+      first: "First",
+      last: "Last",
+      afterMidnight: "After midnight",
+    },
+  },
+  ar: {
+    masthead: {
+      flag: "واجهة يوم المباراة",
+      loading: "جارٍ قراءة مباريات اليوم",
+      catchingUp: "لوحة النتائج تُحدَّث الآن",
+      titleLead: "كرة القدم اليوم،",
+      titleAccent: " مرتبة بحسب ما يهم.",
+      lede: "نتائج مباشرة وجداول الدوريات وقصص اليوم في قراءة تحريرية واحدة. تتصدر الدوريات الأوروبية الكبرى خمسًا، ويأتي الدوري السعودي للمحترفين ثم كل مسابقة أخرى خلفها.",
+      leadAria: "مباراة اليوم الرئيسية",
+      jumpAria: "اختصارات يوم المباراة",
+      jumpLabel: "الانتقال إلى",
+      matchCentre: "مركز المباراة",
+    },
+    lead: {
+      matchOfTheDay: "مباراة اليوم",
+      openTeam: "فتح {team}",
+      record: "السجل",
+      homeSide: "المستضيف",
+      awaySide: "الضيف",
+      kickoffToday: "بداية اليوم",
+      kickoffLabel: "بداية المباراة",
+      yourTime: "بتوقيتك",
+      openMatchCentre: "افتح مركز المباراة",
+      scoreAria: "النتيجة {home} إلى {away}",
+      espnNote: "تفاصيل المباراة من ESPN",
+      formAria: "نتائج {team} الأخيرة: {results}",
+      notices: {
+        failed: {
+          title: "لم تصل لوحة نتائج اليوم بعد.",
+          copy: "لم تستجب ESPN لطلب لوحة النتائج اليومية. تبقى الجداول والتصنيفات وشريط الأخبار تعمل ريثما تتعافى النتائج.",
+          primary: "جرّب مركز المباراة",
+          secondary: "تصفح التقويم",
+        },
+        empty: {
+          title: "لا مواعيد على بطاقة اليوم.",
+          copy: "لا مباريات على لوحة النتائج المتابعة اليوم. يحمل التقويم بقية الشهر، مسابقةً بعد مسابقة.",
+          primary: "افتح التقويم",
+          secondary: "تصفح المسابقات",
+        },
+      },
+    },
+    glance: {
+      kicker: "اليوم",
+      title: "الخلاصة اليومية",
+      stats: {
+        fixtures: "المباريات",
+        goals: "الأهداف",
+        competitions: "المسابقات",
+      },
+      pulseLabel: "إيقاع مباريات اليوم",
+      offline:
+        "لوحة النتائج اليومية معطلة، فلا شكل لرسمه لليوم بعد. تعود المواعيد مع عودة المصدر.",
+      empty:
+        "لا مواعيد بداية على البطاقة المتابعة اليوم — يحمل التقويم بقية الشهر.",
+      matchCentreLink: "مركز المباراة الكامل",
+      timesZone: "الأوقات بتوقيتك",
+    },
+    live: {
+      label: "مباشر الآن",
+      countOne: "{n} مباراة جارية",
+      countMore: "{n} مباريات جارية",
+      scroll: "اسحب",
+      cardAria: "{home} ضد {away}، {clock}",
+      viewAll: "كل المباريات المباشرة",
+    },
+    board: {
+      kicker: "لوحة المواعيد",
+      title: "بطاقة اليوم",
+      description:
+        "كل مسابقة ما تزال بانتظارها أو انتهت، مجمعة ومصنفة — الدوريات الكبرى الخمس أولًا، ثم الدوري السعودي للمحترفين، ثم البقية.",
+      toCome: "قادمة",
+      played: "أُقيمت",
+      allFixtures: "كل المواعيد",
+      offlineTitle: "لوحة نتائج اليوم غير متاحة",
+      offlineCopy:
+        "لم تستجب ESPN للوحة النتائج اليومية. تبقى الجداول والتصنيفات وشريط الأخبار تعمل ريثما تتعافى النتائج.",
+      offlineAction: "جرّب مركز المباراة",
+      noneTitle: "لا مواعيد مدرجة اليوم",
+      noneCopy:
+        "لا مباريات على لوحة النتائج المتابعة اليوم. يحمل التقويم بقية الشهر.",
+      noneAction: "تصفح التقويم",
+      allShown:
+        "كل ما على بطاقة اليوم موجود أصلًا في هذه الصفحة — مباراة اليوم الرئيسية أعلاه، والبقية مباشرة.",
+      matchCentreLink: "افتح مركز المباراة",
+      moreInGroup: "+{n} مباريات أخرى في هذه المسابقة",
+      remainingOne: "{n} مسابقة أخرى على بطاقة اليوم.",
+      remaining: "{n} مسابقات أخرى على بطاقة اليوم.",
+    },
+    table: {
+      kicker: "متابعة الجداول",
+      fallbackTitle: "الجدول الأكثر نشاطًا اليوم",
+      fallbackSub: "جدول حي من المسابقة صاحبة البطاقة الأكثر امتلاءً.",
+      noGames:
+        "لا مسابقة متابعة تلعب اليوم، فلا جدول لعرضه في سياق اليوم.",
+      browse: "تصفح كل الجداول",
+      title: "ترتيب {abbr}",
+      fixtureOne: "{n} مباراة اليوم",
+      fixtures: "{n} مباريات اليوم",
+      offlineCopy:
+        "لم يُرجع ESPN جدولًا لـ {abbr} في هذه اللحظة. تُحدَّث الجداول باستقلالٍ عن النتائج، لذا يتعافى هذا عادةً.",
+      offlineAction: "جرّب صفحة المسابقة",
+      emptyCopy: "لم تنشر ESPN جدولًا لـ {abbr} لموسم {season} بعد.",
+      emptyAction: "افتح المسابقة",
+      caption: "أفضل خمسة فرق في جدول {league} لموسم {season}",
+      headers: {
+        rank: "#",
+        team: "الفريق",
+        played: "لعب",
+        points: "نقاط",
+      },
+      open: "الجدول الكامل",
+      today: "{n} اليوم",
+    },
+    rankings: {
+      kicker: "الترتيب العالمي",
+      title: "أفضل خمسة منتخبات حسب الفيفا",
+      official: "التصنيف الرسمي",
+      published: "صدر بتاريخ",
+      offlineCopy:
+        "لم تستجب واجهة الفيفا العامة. التصنيف نفسه لم يتغير — فقط الاتصال هو ما غاب.",
+      offlineAction: "جرّب صفحة التصنيف",
+      emptyCopy: "لم تنشر الفيفا تصنيفًا بعد.",
+      emptyAction: "افتح التصنيفات",
+      full: "تصنيف الفيفا الكامل",
+      teamCount: "{n} منتخبًا",
+      move: {
+        noChange: "بلا تغيير",
+        up: "ارتفع {n}",
+        down: "هبط {n}",
+      },
+    },
+    context: {
+      sectionAria: "سياق اليوم",
+      kicker: "يومك في سياقه",
+      title: "رقمان جديران بالاهتمام",
+      description:
+        "جدول حي من المسابقة صاحبة أكثر بطاقة ازدحامًا اليوم، وقمة التصنيف الرسمي للرجال لدى الفيفا.",
+    },
+    news: {
+      wireAria: "أخبار من الخدمة",
+      kicker: "من الخدمة الإخبارية",
+      title: "القصص خلف النتائج",
+      description:
+        "عناوين تلتقطها خدمة أخبار ESPN العامة. كل رابط يفتح الناشر الأصلي.",
+      allStories: "كل القصص",
+      offlineTitle: "مصدر الأخبار غير متاح",
+      offlineCopy:
+        "لم تستجب نقطة أخبار ESPN. النتائج والجداول والمواعيد لم تتأثر.",
+      noneTitle: "لا قصص منشورة الآن",
+      noneCopy:
+        "افحص لاحقًا — بقية تاتشلاين تظل تعمل من دون خدمة الأخبار.",
+      fallbackLabel: "خدمة أخبار تاتشلاين",
+      topStory: "القصة الرئيسية",
+      sectionFallback: "كرة القدم",
+      readAtPublisher: "اقرأ عند الناشر",
+      dateUnavailable: "التاريخ غير متاح",
+    },
+    close: {
+      kicker: "يوم مباراتك، ساعتك",
+      titleLead: "لن تفوتك",
+      titleAccent: "بداية أخرى.",
+      lede: "اختر منطقتك الزمنية، وتابع الفرق التي تهمك، وأرسل أي موعد إلى التقويم الذي تستخدمه أصلًا. تبقى التفضيلات في هذا المتصفح.",
+      setPreferences: "اضبط التفضيلات",
+      openCalendar: "افتح التقويم",
+      competitions: "{n} مسابقة",
+      fifa: "الفيفا للرجال والسيدات",
+      calendarExports: "ICS وتقويم Google",
+    },
+    pulse: {
+      empty: "لا مواعيد بداية لرسمها بعد.",
+      aria: "{total} من بدايات المباريات اليوم، والذروة بين {from} و{to}",
+      barOne: "{range} — بداية واحدة",
+      barMany: "{range} — {n} بدايات",
+      peak: "الذروة",
+      first: "الأولى",
+      last: "الأخيرة",
+      afterMidnight: "بعد منتصف الليل",
+    },
+  },
+});

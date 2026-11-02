@@ -8,6 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { LEAGUES } from "@/data/leagues";
+import { T } from "@/lib/i18n";
 import { CompetitionsExplorer } from "@/components/competitions/CompetitionsExplorer";
 import { PageHeader } from "@/components/ui/Primitives";
 
@@ -26,18 +27,18 @@ export default function CompetitionsPage() {
   return (
     <div className="cx-page">
       <PageHeader
-        eyebrow="Competition directory"
-        title="The competition index"
-        description="Search the full directory by name, country or alias, then open live tables, season fixtures and player leaderboards. Women's, youth and international competitions sit alongside the domestic leagues."
+        eyebrow={<T k="competitions.hub.eyebrow" />}
+        title={<T k="competitions.hub.title" />}
+        description={<T k="competitions.hub.description" />}
         actions={
           <>
             <Link className="btn btn--ghost" href="/calendar">
               <CalendarDays size={16} aria-hidden="true" />
-              Calendar
+              <T k="layout.nav.calendar" />
             </Link>
             <Link className="btn btn--soft" href="/matches">
               <Radio size={16} aria-hidden="true" />
-              Match centre
+              <T k="competitions.hub.matchCentre" />
             </Link>
           </>
         }
@@ -47,25 +48,25 @@ export default function CompetitionsPage() {
         <span className="cx-stat">
           <Trophy size={14} aria-hidden="true" />
           <strong>{LEAGUES.length}</strong>
-          <span>competitions</span>
+          <T k="competitions.hub.stats.competitions" />
         </span>
         <span className="cx-stat">
           <Globe2 size={14} aria-hidden="true" />
           <strong>{regions}</strong>
-          <span>regions</span>
+          <T k="competitions.hub.stats.regions" />
         </span>
         <span className="cx-stat">
           <Users size={14} aria-hidden="true" />
           <strong>{womens}</strong>
-          <span>women&apos;s</span>
+          <T k="competitions.hub.stats.womens" />
         </span>
         <span className="cx-stat">
           <Sparkles size={14} aria-hidden="true" />
           <strong>{cups}</strong>
-          <span>cup formats</span>
+          <T k="competitions.hub.stats.cupFormats" />
         </span>
         <span className="cx-stats__note">
-          Curated order, updated from ESPN&apos;s public league index
+          <T k="competitions.hub.statsNote" />
         </span>
       </div>
 

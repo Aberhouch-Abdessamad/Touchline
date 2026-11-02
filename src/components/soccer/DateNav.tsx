@@ -1,12 +1,17 @@
+"use client";
+
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { LocalTime } from "@/components/ui/LocalTime";
 import { DateJump } from "./DateJump";
 import { addDaysISO, todayISO } from "@/lib/date";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * Date stepper shared by the match centre and calendar day views. The current
- * date is always passed in from a request-time component.
+ * date is always passed in from a request-time component. In RTL the arrows
+ * mirror via CSS (`data-flip`), the visual order follows `dir`, and the DOM
+ * order never changes.
  */
 export function DateNav({
   date,
@@ -17,6 +22,7 @@ export function DateNav({
   basePath?: string;
   extraParams?: Record<string, string>;
 }) {
+  const { t } = useI18n();
   const params = (target: string) => {
     const query = new URLSearchParams(extraParams);
     query.set("date", target);
@@ -29,10 +35,10 @@ export function DateNav({
       <Link
         href={params(addDaysISO(date, -1))}
         className="date-nav__arrow"
-        aria-label="Previous day"
-        title="Previous day"
+        aria-label={t.matches.dateNav.prev}
+        title={t.matches.dateNav.prev}
       >
-        <ChevronLeft size={17} aria-hidden="true" />
+        <ChevronLeft size={17} aria-hidden="true" data-flip="rtl" />
       </Link>
 
       <div className="date-nav__center">
@@ -53,17 +59,17 @@ export function DateNav({
           href={params(today)}
           className="btn btn--ghost btn--sm date-nav__today"
         >
-          Today
+          {t.common.today}
         </Link>
       ) : null}
 
       <Link
         href={params(addDaysISO(date, 1))}
         className="date-nav__arrow"
-        aria-label="Next day"
-        title="Next day"
+        aria-label={t.matches.dateNav.next}
+        title={t.matches.dateNav.next}
       >
-        <ChevronRight size={17} aria-hidden="true" />
+        <ChevronRight size={17} aria-hidden="true" data-flip="rtl" />
       </Link>
     </div>
   );

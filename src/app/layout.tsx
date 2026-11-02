@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/plus-jakarta-sans";
+import "@fontsource-variable/cairo";
 import "./globals.css";
 import { PreferencesProvider } from "@/components/providers/PreferencesProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
+import { T } from "@/components/i18n/T";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -64,18 +66,23 @@ export const viewport: Viewport = {
 
 const THEME_BOOT = `(function(){try{var t=localStorage.getItem('touchline.theme')||'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;r.dataset.theme=d?'dark':'light';r.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
 
+// Apply the stored language before first paint so Arabic users don't get an
+// LTR flash. The PreferencesProvider effect keeps it in sync afterwards.
+const LANG_BOOT = `(function(){try{var p=JSON.parse(localStorage.getItem('touchline.preferences.v1')||'{}');var l=p&&p.lang==='ar'?'ar':'en';var r=document.documentElement;r.lang=l;r.dir=l==='ar'?'rtl':'ltr';}catch(e){}})();`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="en" dir="ltr" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+        <script dangerouslySetInnerHTML={{ __html: LANG_BOOT }} />
       </head>
       <body>
-        <a className="skip-link" href="#main">
-          Skip to content
-        </a>
         <ToastProvider>
           <PreferencesProvider>
+            <a className="skip-link" href="#main">
+              <T k="common.skipToContent" />
+            </a>
             <div className="app-shell">
               <SiteHeader />
               <main id="main" className="site-main">

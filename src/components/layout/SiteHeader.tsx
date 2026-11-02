@@ -14,8 +14,12 @@ import {
   X,
 } from "lucide-react";
 import { NAV_ITEMS, SITE_NAME } from "@/lib/site";
+import { useI18n } from "@/lib/i18n";
+import { interpolate } from "@/lib/i18n/core";
+import type { Dict } from "@/lib/i18n/dict";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { LanguageToggle } from "./LanguageToggle";
 import { BrandMark } from "./BrandMark";
 import { usePreferences } from "@/components/providers/PreferencesProvider";
 
@@ -28,6 +32,11 @@ const ICONS: Record<string, typeof CalendarDays> = {
   "/search": Search,
 };
 
+/** "/matches" -> nav.matches */
+function navKey(href: string): keyof Dict["layout"]["nav"] {
+  return href.slice(1) as keyof Dict["layout"]["nav"];
+}
+
 function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -39,6 +48,7 @@ function isActive(pathname: string, href: string) {
  */
 function DesktopLinks() {
   const pathname = usePathname();
+  const { t } = useI18n();
 
   return (
     <>
@@ -51,7 +61,7 @@ function DesktopLinks() {
             className={cn("desktop-nav__link", active && "is-active")}
             aria-current={active ? "page" : undefined}
           >
-            {item.label}
+            {t.layout.nav[navKey(item.href)]}
           </Link>
         );
       })}
@@ -60,11 +70,12 @@ function DesktopLinks() {
 }
 
 function DesktopLinksFallback() {
+  const { t } = useI18n();
   return (
     <>
       {NAV_ITEMS.map((item) => (
         <Link key={item.href} href={item.href} className="desktop-nav__link">
-          {item.label}
+          {t.layout.nav[navKey(item.href)]}
         </Link>
       ))}
     </>
@@ -74,15 +85,18 @@ function DesktopLinksFallback() {
 function MobilePanel({ onClose }: { onClose: () => void }) {
   const pathname = usePathname();
   const initialPath = useRef(pathname);
+  const { t } = useI18n();
 
   // Close the panel after a navigation, but not on the render that opened it.
   useEffect(() => {
     if (initialPath.current !== pathname) onClose();
   }, [pathname, onClose]);
 
+  const settingsActive = isActive(pathname, "/settings");
+
   return (
     <div className="mobile-nav" id="mobile-navigation">
-      <nav aria-label="Mobile">
+      <nav aria-label={t.layout.ariaNavMobile}>
         {NAV_ITEMS.map((item) => {
           const Icon = ICONS[item.href] ?? Search;
           const active = isActive(pathname, item.href);
@@ -95,7 +109,7 @@ function MobilePanel({ onClose }: { onClose: () => void }) {
               onClick={onClose}
             >
               <Icon size={18} aria-hidden="true" />
-              <span>{item.label}</span>
+              <span>{t.layout.nav[navKey(item.href)]}</span>
             </Link>
           );
         })}
@@ -103,24 +117,23 @@ function MobilePanel({ onClose }: { onClose: () => void }) {
           href="/settings"
           className={cn(
             "mobile-nav__link",
-            isActive(pathname, "/settings") && "is-active",
+            settingsActive && "is-active",
           )}
-          aria-current={isActive(pathname, "/settings") ? "page" : undefined}
+          aria-current={settingsActive ? "page" : undefined}
           onClick={onClose}
         >
           <Settings size={18} aria-hidden="true" />
-          <span>Settings &amp; favourites</span>
+          <span>{t.layout.mobileSettings}</span>
         </Link>
       </nav>
-      <p className="mobile-nav__note">
-        All times follow your saved timezone. Preferences stay in this browser.
-      </p>
+      <p className="mobile-nav__note">{t.layout.mobileNote}</p>
     </div>
   );
 }
 
 export function SiteHeader() {
   const { favorites } = usePreferences();
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const closeMenu = useCallback(() => setOpen(false), []);
 
@@ -142,30 +155,37 @@ export function SiteHeader() {
     favorites.leagues.length +
     favorites.matches.length;
 
+  const settingsAria = favouriteCount
+    ? interpolate(t.layout.settingsAria, {
+        saved: interpolate(t.layout.settingsAriaSaved, { n: favouriteCount }),
+      })
+    : t.layout.settingsLabel;
+
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <Link href="/" className="brand" aria-label={`${SITE_NAME} home`}>
+        <Link href="/" className="brand" aria-label={`${SITE_NAME} ${t.layout.home}`}>
           <BrandMark />
           <span className="brand__text">
             <span className="brand__name">{SITE_NAME}</span>
-            <span className="brand__tag">Football, without the noise</span>
+            <span className="brand__tag">{t.layout.brandTag}</span>
           </span>
         </Link>
 
-        <nav className="desktop-nav" aria-label="Primary">
+        <nav className="desktop-nav" aria-label={t.layout.ariaNavPrimary}>
           <Suspense fallback={<DesktopLinksFallback />}>
             <DesktopLinks />
           </Suspense>
         </nav>
 
         <div className="header-actions">
+          <LanguageToggle className="icon-button language-toggle header-actions__lang" />
           <ThemeToggle className="icon-button header-actions__theme" />
           <Link
             href="/settings"
             className="icon-button header-actions__settings"
-            aria-label={`Settings${favouriteCount ? `, ${favouriteCount} favourites saved` : ""}`}
-            title="Settings and favourites"
+            aria-label={settingsAria}
+            title={t.layout.settingsTitle}
           >
             <Settings size={18} aria-hidden="true" />
             {favouriteCount > 0 ? (
@@ -180,7 +200,7 @@ export function SiteHeader() {
             onClick={() => setOpen((value) => !value)}
             aria-expanded={open}
             aria-controls="mobile-navigation"
-            aria-label={open ? "Close menu" : "Open menu"}
+            aria-label={open ? t.layout.closeMenu : t.layout.openMenu}
           >
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>

@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 import { usePreferences } from "@/components/providers/PreferencesProvider";
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme, hydrated } = usePreferences();
+  const { t } = useI18n();
   const [resolved, setResolved] = useState<"light" | "dark">("light");
 
   useEffect(() => {
@@ -22,14 +24,16 @@ export function ThemeToggle({ className }: { className?: string }) {
   }, [theme, hydrated]);
 
   const next = resolved === "dark" ? "light" : "dark";
+  const label =
+    next === "dark" ? t.common.theme.toDark : t.common.theme.toLight;
 
   return (
     <button
       type="button"
       className={className ?? "icon-button"}
       onClick={() => setTheme(next)}
-      aria-label={`Switch to ${next} theme`}
-      title={`Switch to ${next} theme`}
+      aria-label={label}
+      title={label}
     >
       {resolved === "dark" ? (
         <Sun size={18} aria-hidden="true" />

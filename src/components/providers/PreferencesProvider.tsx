@@ -10,6 +10,9 @@ import {
   type ReactNode,
 } from "react";
 import { useToast } from "./ToastProvider";
+import { DICT } from "@/lib/i18n/dict";
+import { interpolate, isLocale, LOCALE_CONFIG, type Locale } from "@/lib/i18n/core";
+import { createDateFormatters, type DateFormatters } from "@/lib/i18n/format";
 
 export type ThemeChoice = "light" | "dark" | "system";
 
@@ -41,6 +44,7 @@ export interface MatchReminder {
 
 export interface Preferences {
   theme: ThemeChoice;
+  lang: Locale;
   timezone: string | null;
   notifications: boolean;
   favorites: {
@@ -55,6 +59,7 @@ interface PreferencesContextValue extends Preferences {
   hydrated: boolean;
   timeZone: string;
   setTheme: (theme: ThemeChoice) => void;
+  setLang: (lang: Locale) => void;
   setTimezone: (timezone: string | null) => void;
   setNotifications: (enabled: boolean) => void;
   enableNotifications: () => Promise<boolean>;
@@ -77,6 +82,7 @@ const THEME_KEY = "touchline.theme";
 
 const DEFAULT_PREFERENCES: Preferences = {
   theme: "system",
+  lang: "en",
   timezone: null,
   notifications: false,
   favorites: { teams: [], leagues: [], matches: [] },
@@ -95,6 +101,7 @@ function sanitize(raw: unknown): Preferences {
       : "system";
   return {
     theme,
+    lang: isLocale(value.lang) ? value.lang : "en",
     timezone: typeof value.timezone === "string" ? value.timezone : null,
     notifications: Boolean(value.notifications),
     favorites: {
@@ -155,6 +162,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [timeZone, setTimeZone] = useState("UTC");
   const { push } = useToast();
+  // Internal copy (toasts, notifications) follows the active language.
+  const copy = DICT[preferences.lang].common;
 
   useEffect(() => {
     let stored: Preferences | null = null;
@@ -188,6 +197,16 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     return () => media.removeEventListener("change", onChange);
   }, [preferences.theme, hydrated]);
 
+  // Keep <html lang/dir> in sync with the stored language. The inline boot
+  // script in the root layout does the same job before hydration; this effect
+  // covers subsequent switches.
+  useEffect(() => {
+    if (!hydrated) return;
+    const root = document.documentElement;
+    root.lang = preferences.lang;
+    root.dir = LOCALE_CONFIG[preferences.lang].dir;
+  }, [preferences.lang, hydrated]);
+
   useEffect(() => {
     if (!hydrated) return;
     setTimeZone(preferences.timezone ?? browserTimeZone());
@@ -195,6 +214,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   const setTheme = useCallback((theme: ThemeChoice) => {
     setPreferences((current) => ({ ...current, theme }));
+  }, []);
+
+  const setLang = useCallback((lang: Locale) => {
+    setPreferences((current) => ({ ...current, lang }));
   }, []);
 
   const setTimezone = useCallback((timezone: string | null) => {
@@ -207,29 +230,26 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   const enableNotifications = useCallback(async () => {
     if (typeof window === "undefined" || !("Notification" in window)) {
-      push("This browser does not support notifications.", "error");
+      push(copy.notifications.unsupported, "error");
       return false;
     }
     if (Notification.permission === "denied") {
-      push(
-        "Notifications are blocked for this site. Update the browser's site permissions to allow them.",
-        "error",
-      );
+      push(copy.notifications.blocked, "error");
       return false;
     }
     const permission = await Notification.requestPermission();
     const granted = permission === "granted";
     setPreferences((current) => ({ ...current, notifications: granted }));
     if (granted) {
-      push("Match reminders are enabled for this browser.", "success");
-      new Notification("Touchline reminders are on", {
-        body: "You will be alerted about saved kick-off times while this browser is open.",
+      push(copy.notifications.enabled, "success");
+      new Notification(copy.notifications.title, {
+        body: copy.notifications.body,
       });
     } else {
-      push("Notification permission was not granted.", "info");
+      push(copy.notifications.notGranted, "info");
     }
     return granted;
-  }, [push]);
+  }, [push, copy]);
 
   const toggleTeamFavorite = useCallback((team: FavoriteTeam) => {
     setPreferences((current) => {
@@ -304,8 +324,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore.
     }
-    push("Local preferences cleared.", "info");
-  }, [push]);
+    push(copy.notifications.preferencesCleared, "info");
+  }, [push, copy]);
 
   const exportPreferences = useCallback(() => {
     const blob = new Blob([JSON.stringify(preferences, null, 2)], {
@@ -319,22 +339,22 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-    push("Preferences exported as JSON.", "success");
-  }, [preferences, push]);
+    push(copy.notifications.exported, "success");
+  }, [preferences, push, copy]);
 
   const importPreferences = useCallback(
     (json: string) => {
       try {
         const parsed = sanitize(JSON.parse(json));
         setPreferences(parsed);
-        push("Preferences imported.", "success");
+        push(copy.notifications.imported, "success");
         return true;
       } catch {
-        push("That file is not valid Touchline preferences JSON.", "error");
+        push(copy.notifications.importInvalid, "error");
         return false;
       }
     },
-    [push],
+    [push, copy],
   );
 
   const isTeamFavorite = useCallback(
@@ -372,12 +392,12 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
             typeof Notification !== "undefined" &&
             Notification.permission === "granted"
           ) {
-            new Notification(`Kick-off: ${reminder.label}`, {
-              body: "The match is starting now. Open Touchline for live details.",
+            new Notification(interpolate(copy.notifications.kickoffTitle, { label: reminder.label }), {
+              body: copy.notifications.kickoffBody,
               tag: reminder.matchId,
             });
           }
-          push(`Kick-off: ${reminder.label}`, "info");
+          push(interpolate(copy.notifications.kickoffTitle, { label: reminder.label }), "info");
           removeReminder(reminder.matchId);
         }
       }
@@ -390,6 +410,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     preferences.notifications,
     preferences.reminders,
     push,
+    copy,
     removeReminder,
   ]);
 
@@ -399,6 +420,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       hydrated,
       timeZone,
       setTheme,
+      setLang,
       setTimezone,
       setNotifications,
       enableNotifications,
@@ -420,6 +442,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       hydrated,
       timeZone,
       setTheme,
+      setLang,
       setTimezone,
       setNotifications,
       enableNotifications,
@@ -451,4 +474,54 @@ export function usePreferences(): PreferencesContextValue {
     throw new Error("usePreferences must be used inside PreferencesProvider");
   }
   return context;
+}
+
+/**
+ * The active dictionary without the strict provider requirement. Components
+ * rendered outside the preferences tree (prerendered error boundaries and
+ * friends) still resolve copy — in English, the baseline language.
+ */
+export function useDict(): (typeof DICT)["en"] {
+  const context = useContext(PreferencesContext);
+  return DICT[context?.lang ?? "en"];
+}
+
+export interface I18nContextValue {
+  /** Active UI language. */
+  lang: Locale;
+  /** Switch the UI language; persists to local storage. */
+  setLang: (lang: Locale) => void;
+  /** Text direction for the active language (`dir` attribute value). */
+  dir: "ltr" | "rtl";
+  /** Full translated dictionary for the active language. */
+  t: (typeof DICT)["en"];
+  /** Placeholder interpolation: `f(t.x.inDays, { n: 3 })`. */
+  f: typeof interpolate;
+  /** Locale-aware date/time formatters bound to the user's timezone. */
+  d: DateFormatters;
+  /** True once stored preferences have been read in the browser. */
+  hydrated: boolean;
+  /** The user's preferred timezone (from preferences or the browser). */
+  timeZone: string;
+}
+
+/**
+ * Language + formatting helpers derived from the preferences store. Always
+ * call both hooks together when a component needs timezone-aware dates.
+ */
+export function useI18n(): I18nContextValue {
+  const prefs = usePreferences();
+  return useMemo(
+    () => ({
+      lang: prefs.lang,
+      setLang: prefs.setLang,
+      dir: LOCALE_CONFIG[prefs.lang].dir,
+      t: DICT[prefs.lang],
+      f: interpolate,
+      d: createDateFormatters(prefs.lang, prefs.timeZone),
+      hydrated: prefs.hydrated,
+      timeZone: prefs.timeZone,
+    }),
+    [prefs.lang, prefs.timeZone, prefs.hydrated, prefs.setLang],
+  );
 }

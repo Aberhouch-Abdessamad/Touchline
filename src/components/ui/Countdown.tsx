@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface CountdownProps {
@@ -20,6 +21,7 @@ function parts(diff: number) {
 }
 
 export function Countdown({ target, className, compact = false }: CountdownProps) {
+  const { t, f } = useI18n();
   const [remaining, setRemaining] = useState<number | null>(null);
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export function Countdown({ target, className, compact = false }: CountdownProps
   if (remaining === null) {
     return (
       <span className={cn("countdown is-pending", className)} aria-live="polite">
-        Calculating kick-off…
+        {t.common.countdown.calculating}
       </span>
     );
   }
@@ -40,28 +42,36 @@ export function Countdown({ target, className, compact = false }: CountdownProps
   if (remaining <= 0) {
     return (
       <span className={cn("countdown countdown--now", className)}>
-        Kick-off time reached
+        {t.common.countdown.kickOffReached}
       </span>
     );
   }
 
+  // Digit/separator strings read correctly inside RTL if forced LTR.
   const value = parts(remaining);
+  const units = t.common.countdown.units;
   const label = value.days > 0
-    ? `${value.days}d ${value.hours}h ${value.minutes}m`
+    ? `${value.days}${units.d} ${value.hours}${units.h} ${value.minutes}${units.m}`
     : `${String(value.hours).padStart(2, "0")}:${String(value.minutes).padStart(2, "0")}:${String(value.seconds).padStart(2, "0")}`;
 
   if (compact) {
     return (
       <span className={cn("countdown", className)} aria-live="off">
-        {value.days > 0 ? `in ${value.days}d` : label}
+        {value.days > 0 ? (
+          f(t.common.countdown.inDaysShort, { n: value.days })
+        ) : (
+          <span className="u-dir-ltr">{label}</span>
+        )}
       </span>
     );
   }
 
   return (
     <span className={cn("countdown", className)} aria-live="off">
-      <span className="countdown__label">Kick-off in</span>
-      <span className="countdown__value">{label}</span>
+      <span className="countdown__label">{t.common.countdown.kickOffIn}</span>
+      <span className="countdown__value">
+        <span className="u-dir-ltr">{label}</span>
+      </span>
     </span>
   );
 }

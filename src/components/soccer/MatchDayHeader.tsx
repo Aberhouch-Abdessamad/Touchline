@@ -1,7 +1,12 @@
+"use client";
+
+import { useMemo } from "react";
 import Link from "next/link";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { DateJump } from "./DateJump";
 import { addDaysISO, parseDateParam, todayISO } from "@/lib/date";
+import { useI18n } from "@/lib/i18n";
+import { LOCALE_CONFIG } from "@/lib/i18n/core";
 import { cn } from "@/lib/utils";
 
 export interface DayCounts {
@@ -13,43 +18,33 @@ export interface DayCounts {
   goals: number;
 }
 
-const weekdayFormat = new Intl.DateTimeFormat("en-GB", {
-  weekday: "long",
-  timeZone: "UTC",
-});
-
-const dayFormat = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  timeZone: "UTC",
-});
-
-const monthFormat = new Intl.DateTimeFormat("en-GB", {
-  month: "long",
-  timeZone: "UTC",
-});
-
-const yearFormat = new Intl.DateTimeFormat("en-GB", {
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-const shortWeekdayFormat = new Intl.DateTimeFormat("en-GB", {
-  weekday: "short",
-  timeZone: "UTC",
-});
-
-const fullFormat = new Intl.DateTimeFormat("en-GB", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-const numberFormat = new Intl.NumberFormat("en-GB");
-
-function value(count: number | undefined): string {
-  return count === undefined ? "—" : numberFormat.format(count);
+/**
+ * Whole-day formatters, pinned to UTC: `date` names a calendar day, so the
+ * visible day must not shift with the viewer's timezone the way kick-off
+ * times do. Only the language follows the UI locale; digits stay Latin.
+ */
+function buildFormatters(locale: string) {
+  return {
+    weekday: new Intl.DateTimeFormat(locale, {
+      weekday: "long",
+      timeZone: "UTC",
+    }),
+    day: new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" }),
+    month: new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }),
+    year: new Intl.DateTimeFormat(locale, { year: "numeric", timeZone: "UTC" }),
+    shortWeekday: new Intl.DateTimeFormat(locale, {
+      weekday: "short",
+      timeZone: "UTC",
+    }),
+    full: new Intl.DateTimeFormat(locale, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    }),
+    number: new Intl.NumberFormat(locale),
+  };
 }
 
 /**
@@ -66,56 +61,67 @@ export function MatchDayHeader({
   counts?: DayCounts;
   error?: boolean;
 }) {
+  const { lang, t, f } = useI18n();
+  const { weekday, day, month, year, shortWeekday, full, number } = useMemo(
+    () => buildFormatters(LOCALE_CONFIG[lang].intl),
+    [lang],
+  );
+
+  const value = (count: number | undefined): string =>
+    count === undefined ? "—" : number.format(count);
+
   const today = todayISO();
-  const day = parseDateParam(date);
-  const weekdayIndex = (day.getUTCDay() + 6) % 7;
+  const dayDate = parseDateParam(date);
+  const weekdayIndex = (dayDate.getUTCDay() + 6) % 7;
   const weekStart = addDaysISO(date, -weekdayIndex);
   const week = Array.from({ length: 7 }, (_, index) =>
     addDaysISO(weekStart, index),
   );
 
-  let lede = "Fixtures are loading for this date.";
+  let lede = t.matches.lede.loading;
   if (error) {
-    lede =
-      "The scoreboard feed did not respond. The date controls still work, so you can move to another day.";
+    lede = t.matches.lede.error;
   } else if (counts) {
     lede =
       counts.matches === 0
-        ? "No fixtures are scheduled for this date. Try another day or browse the season calendar."
-        : `${value(counts.matches)} fixtures across ${
-            counts.competitions
-          } ${
-            counts.competitions === 1 ? "competition" : "competitions"
-          }. Kick-offs are shown in your local time.`;
+        ? t.matches.lede.empty
+        : f(counts.competitions === 1 ? t.matches.lede.countOne : t.matches.lede.count, {
+            matches: value(counts.matches),
+            competitions: value(counts.competitions),
+          });
   }
 
-  const stats: Array<{ label: string; count?: number; live?: boolean }> = [
-    { label: "Fixtures", count: counts?.matches },
-    { label: "Live now", count: counts?.live, live: true },
-    { label: "Goals", count: counts?.goals },
-    { label: "Competitions", count: counts?.competitions },
+  const stats: Array<{
+    key: "fixtures" | "live" | "goals" | "competitions";
+    count?: number;
+    live?: boolean;
+  }> = [
+    { key: "fixtures", count: counts?.matches },
+    { key: "live", count: counts?.live, live: true },
+    { key: "goals", count: counts?.goals },
+    { key: "competitions", count: counts?.competitions },
   ];
 
   return (
     <section
       className="mc-hero"
-      aria-label={`Match centre for ${fullFormat.format(day)}`}
+      aria-label={f(t.matches.hero.ariaLabel, { date: full.format(dayDate) })}
     >
       <div className="mc-hero__bar">
         <p className="mc-hero__eyebrow">
           <span className="mc-hero__spark" aria-hidden="true" />
-          Match centre
+          {t.matches.hero.eyebrow}
         </p>
         <div className="mc-hero__actions">
           <Link className="mc-hero__action" href="/calendar">
             <CalendarDays size={14} aria-hidden="true" />
-            Calendar
+            {t.matches.hero.calendar}
           </Link>
           {date === today ? (
-            <span className="mc-hero__today">Today</span>
+            <span className="mc-hero__today">{t.common.today}</span>
           ) : (
             <Link className="mc-hero__action is-accent" href="/matches">
-              Back to today
+              {t.matches.hero.backToToday}
             </Link>
           )}
         </div>
@@ -124,13 +130,13 @@ export function MatchDayHeader({
       <div className="mc-hero__body">
         <div className="mc-hero__intro">
           <h1 className="mc-hero__title">
-            <span className="mc-hero__weekday">{weekdayFormat.format(day)}</span>
+            <span className="mc-hero__weekday">{weekday.format(dayDate)}</span>
             <span className="mc-hero__date">
-              <span className="mc-hero__daynum">{dayFormat.format(day)}</span>
-              <span className="mc-hero__month">{monthFormat.format(day)}</span>
-              <span className="mc-hero__year">{yearFormat.format(day)}</span>
+              <span className="mc-hero__daynum">{day.format(dayDate)}</span>
+              <span className="mc-hero__month">{month.format(dayDate)}</span>
+              <span className="mc-hero__year">{year.format(dayDate)}</span>
             </span>
-            <span className="sr-only"> fixtures</span>
+            <span className="sr-only"> {t.matches.hero.fixturesSuffix}</span>
           </h1>
           <p className="mc-hero__lede">{lede}</p>
         </div>
@@ -138,13 +144,13 @@ export function MatchDayHeader({
         <dl className="mc-hero__stats">
           {stats.map((stat) => (
             <div
-              key={stat.label}
+              key={stat.key}
               className={cn(
                 "mc-hero__stat",
                 stat.live && (stat.count ?? 0) > 0 && "is-live",
               )}
             >
-              <dt>{stat.label}</dt>
+              <dt>{t.matches.stats[stat.key]}</dt>
               <dd>{value(stat.count)}</dd>
             </div>
           ))}
@@ -155,34 +161,35 @@ export function MatchDayHeader({
         <Link
           href={`/matches?date=${addDaysISO(date, -1)}`}
           className="mc-hero__arrow"
-          aria-label="Previous day"
-          title="Previous day"
+          aria-label={t.matches.dateNav.prev}
+          title={t.matches.dateNav.prev}
         >
-          <ChevronLeft size={16} aria-hidden="true" />
+          <ChevronLeft size={16} aria-hidden="true" data-flip="rtl" />
         </Link>
 
         <ol className="mc-hero__week">
-          {week.map((value) => {
-            const active = value === date;
-            const valueDate = parseDateParam(value);
-            const label = fullFormat.format(valueDate);
+          {week.map((weekDate) => {
+            const active = weekDate === date;
+            const valueDate = parseDateParam(weekDate);
             return (
-              <li key={value}>
+              <li key={weekDate}>
                 <Link
-                  href={`/matches?date=${value}`}
+                  href={`/matches?date=${weekDate}`}
                   className={cn(
                     "mc-hero__day",
                     active && "is-active",
-                    value === today && "is-today",
+                    weekDate === today && "is-today",
                   )}
                   aria-current={active ? "date" : undefined}
-                  aria-label={`Fixtures for ${label}`}
+                  aria-label={f(t.matches.dateNav.weekAria, {
+                    date: full.format(valueDate),
+                  })}
                 >
                   <span className="mc-hero__day-name">
-                    {shortWeekdayFormat.format(valueDate)}
+                    {shortWeekday.format(valueDate)}
                   </span>
                   <span className="mc-hero__day-num">
-                    {Number(value.slice(8, 10))}
+                    {Number(weekDate.slice(8, 10))}
                   </span>
                 </Link>
               </li>
@@ -193,10 +200,10 @@ export function MatchDayHeader({
         <Link
           href={`/matches?date=${addDaysISO(date, 1)}`}
           className="mc-hero__arrow"
-          aria-label="Next day"
-          title="Next day"
+          aria-label={t.matches.dateNav.next}
+          title={t.matches.dateNav.next}
         >
-          <ChevronRight size={16} aria-hidden="true" />
+          <ChevronRight size={16} aria-hidden="true" data-flip="rtl" />
         </Link>
 
         <div className="mc-hero__jump">
