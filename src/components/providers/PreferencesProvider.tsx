@@ -9,9 +9,19 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import { useToast } from "./ToastProvider";
 import { DICT } from "@/lib/i18n/dict";
-import { interpolate, isLocale, LOCALE_CONFIG, type Locale } from "@/lib/i18n/core";
+import {
+  DEFAULT_LOCALE,
+  DEFAULT_TIMEZONE,
+  interpolate,
+  isLocale,
+  LANG_COOKIE,
+  LOCALE_CONFIG,
+  TIMEZONE_COOKIE,
+  type Locale,
+} from "@/lib/i18n/core";
 import { createDateFormatters, type DateFormatters } from "@/lib/i18n/format";
 
 export type ThemeChoice = "light" | "dark" | "system";
@@ -80,9 +90,32 @@ interface PreferencesContextValue extends Preferences {
 const STORAGE_KEY = "touchline.preferences.v1";
 const THEME_KEY = "touchline.theme";
 
+/**
+ * Language and time zone are mirrored into these cookies (same constants the
+ * root layout reads through `serverPreferences`) so a full reload renders the
+ * server in the language the browser is already showing.
+ */
+const COOKIE_ATTRIBUTES = ";path=/;max-age=31536000;samesite=Lax";
+
+function setCookie(name: string, value: string) {
+  try {
+    document.cookie = `${name}=${encodeURIComponent(value)}${COOKIE_ATTRIBUTES}`;
+  } catch {
+    // Storage can be unavailable in private browsing; the UI still works.
+  }
+}
+
+function clearCookie(name: string) {
+  try {
+    document.cookie = `${name}=;path=/;max-age=0`;
+  } catch {
+    // Ignore.
+  }
+}
+
 const DEFAULT_PREFERENCES: Preferences = {
   theme: "system",
-  lang: "en",
+  lang: DEFAULT_LOCALE,
   timezone: null,
   notifications: false,
   favorites: { teams: [], leagues: [], matches: [] },
@@ -157,11 +190,30 @@ function applyTheme(choice: ThemeChoice, root = document.documentElement) {
   }
 }
 
-export function PreferencesProvider({ children }: { children: ReactNode }) {
-  const [preferences, setPreferences] = useState<Preferences>(DEFAULT_PREFERENCES);
+export function PreferencesProvider({
+  children,
+  initialLang = DEFAULT_LOCALE,
+  initialTimeZone,
+}: {
+  children: ReactNode;
+  /**
+   * Language the server rendered this request with — seeded from the request
+   * cookie in the root layout. Starting the first render with it keeps SSR
+   * and the client on one dictionary, including the Suspense sections that
+   * stream in after the page has hydrated.
+   */
+  initialLang?: Locale;
+  /** Time zone the server rendered with; null ⇒ the server fell back to UTC. */
+  initialTimeZone?: string | null;
+}) {
+  const [preferences, setPreferences] = useState<Preferences>(() => ({
+    ...DEFAULT_PREFERENCES,
+    lang: initialLang,
+  }));
   const [hydrated, setHydrated] = useState(false);
-  const [timeZone, setTimeZone] = useState("UTC");
+  const [timeZone, setTimeZone] = useState(initialTimeZone || DEFAULT_TIMEZONE);
   const { push } = useToast();
+  const router = useRouter();
   // Internal copy (toasts, notifications) follows the active language.
   const copy = DICT[preferences.lang].common;
 
@@ -173,10 +225,22 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     } catch {
       stored = null;
     }
-    if (stored) setPreferences(stored);
-    setTimeZone(stored?.timezone ?? browserTimeZone());
+    const nextTimeZone = stored?.timezone ?? browserTimeZone();
+    setTimeZone(nextTimeZone);
+    if (stored && stored.lang !== initialLang) setPreferences(stored);
     setHydrated(true);
-  }, []);
+
+    // The server rendered with the cookie-backed locale, so it and the
+    // client's first render already agree — including the Suspense sections
+    // still streaming in. Only adopt-and-refresh when the two have drifted
+    // (first load after a language switch, a cleared cookie, or no stored
+    // time zone yet): the boot script re-synced the cookies before React
+    // loaded, so the refreshed render matches this browser.
+    const drifted =
+      (stored !== null && stored.lang !== initialLang) ||
+      nextTimeZone !== (initialTimeZone || DEFAULT_TIMEZONE);
+    if (drifted) router.refresh();
+  }, [initialLang, initialTimeZone, router]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -218,10 +282,13 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   const setLang = useCallback((lang: Locale) => {
     setPreferences((current) => ({ ...current, lang }));
+    setCookie(LANG_COOKIE, lang);
   }, []);
 
   const setTimezone = useCallback((timezone: string | null) => {
     setPreferences((current) => ({ ...current, timezone }));
+    if (timezone) setCookie(TIMEZONE_COOKIE, timezone);
+    else clearCookie(TIMEZONE_COOKIE);
   }, []);
 
   const setNotifications = useCallback((enabled: boolean) => {
@@ -319,6 +386,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   const resetPreferences = useCallback(() => {
     setPreferences(DEFAULT_PREFERENCES);
+    clearCookie(LANG_COOKIE);
+    clearCookie(TIMEZONE_COOKIE);
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {
@@ -347,6 +416,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       try {
         const parsed = sanitize(JSON.parse(json));
         setPreferences(parsed);
+        setCookie(LANG_COOKIE, parsed.lang);
+        if (parsed.timezone) setCookie(TIMEZONE_COOKIE, parsed.timezone);
+        else clearCookie(TIMEZONE_COOKIE);
         push(copy.notifications.imported, "success");
         return true;
       } catch {

@@ -14,7 +14,12 @@ The site now supports two UI languages: **English** (`en`, default) and
   `leagueDisplayName(league, lang)`.
 - `src/components/i18n/T.tsx` — server-renderable `<T k="domain.key" />`.
 - `src/components/providers/PreferencesProvider.tsx` — stores `lang`, applies
-  `<html lang/dir>`, exports `useI18n()`.
+  `<html lang/dir>`, exports `useI18n()`. Seeds its first render from the
+  language the server rendered with (`jdwel.lang` / `jdwel.tz` cookies,
+  read in the root layout via `src/lib/i18n/server.ts`) and mirrors every
+  change back to those cookies — this is what keeps SSR, the streamed
+  Suspense sections and the client's first render on one dictionary (a
+  hydration-safe setup).
 
 ## Public API
 
