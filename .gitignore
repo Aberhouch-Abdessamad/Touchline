@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# AI analysis store (server-side JSON files, one per match)
+/.data
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

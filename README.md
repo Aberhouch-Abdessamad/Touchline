@@ -18,6 +18,7 @@ Touchline is a complete, original Next.js application built on real public sport
 - **Calendar that works.** A month masthead with a 12-month strip and fixture stats, a real day grid, a selected-day panel, and month/day `.ics` exports plus Google Calendar and Outlook actions.
 - **Browser-local personalisation.** Theme, time zone, favourite teams/competitions/matches, and kick-off reminders. No account, no server-side profile.
 - **Honest states.** Loading skeletons, empty states, retry paths and degraded-mode messaging throughout.
+- **AI match analysis.** On a match page, FFC-Vision reasons over the real ESPN dataset to predict the result, score, goals, cards and first-half markets — every number with an explanation, and a reliability flag when data is thin.
 - **Public JSON API.** Same-origin routes with validation, normalisation, cache metadata and a documented envelope.
 
 ## Tech stack
@@ -29,7 +30,8 @@ Touchline is a complete, original Next.js application built on real public sport
 | Icons | `lucide-react` |
 | Fonts | Plus Jakarta Sans Variable, self-hosted via Fontsource |
 | Data | ESPN public soccer APIs; FIFA public rankings API |
-| Persistence | `localStorage` only |
+| AI | FFC-Vision via the FFC AI Gateway (OpenAI-compatible), server-side only |
+| Persistence | `localStorage`; gitignored server-side JSON files for AI analyses |
 
 No database, no authentication service, no analytics SDK and no third-party UI kit.
 
@@ -57,8 +59,17 @@ Copy `.env.example` to `.env.local` and adjust as needed:
 | --- | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | Recommended in production | Canonical origin used for metadata, sitemap, robots and share links. Defaults to `http://localhost:3000`. |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | Optional | Enables the contact form's `mailto:` action. Without it the contact page explains that no address is configured. |
+| `AI_PROVIDER` | Optional | Must be `ffc-vision` (also the default); any other value fails loudly on the server. |
+| `FFC_VISION_BASE_URL` | Required for AI analysis | OpenAI-compatible gateway base URL including the `/v1` segment. Private per deployment; set it in `.env.local`, never in this file. |
+| `FFC_VISION_API_KEY` | Required for AI analysis | Bearer key for the FFC AI Gateway. Server-only; never logged, never sent to the browser. Stored analyses stay viewable without it. |
+| `FFC_VISION_MODEL` | Optional | Gateway model used for analysis. Defaults to `FFC-Vision`. |
+| `FFC_VISION_TIMEOUT_MS` | Optional | Per-request timeout (5,000–120,000). Defaults to 60000. |
+| `FFC_VISION_RETRIES` | Optional | Retries on temporary failures (429/5xx/timeout). Defaults to 2. |
+| `FFC_VISION_MAX_TOKENS` | Optional | Completion budget for one analysis, including hidden reasoning tokens. Defaults to 8000. |
+| `FFC_VISION_TEMPERATURE` | Optional | Sampling temperature. Defaults to 0.2. |
+| `AI_RATE_LIMIT_PER_HOUR` | Optional | Generate-calls allowed per client IP per hour. Defaults to 10. |
 
-No API keys are needed. The upstream APIs are public and unauthenticated.
+The football data APIs are public and need no key. The FFC-Vision gateway key is the only credential; it lives in the gitignored `.env.local` and reaches only the server-side analysis pipeline.
 
 ## Routes
 
@@ -70,7 +81,7 @@ No API keys are needed. The upstream APIs are public and unauthenticated.
 | `/matches?date=YYYY-MM-DD` | Day masthead with date stepper and week strip, live-score board, and fixtures grouped by competition with competition/state/favourite filters, paging and a refresh ticker. |
 | `/competitions` | Searchable, filterable directory of all 76 competitions. |
 | `/competitions/[slug]?tab=standings&season=YYYY` | Competition table, scorers or fixtures. Tabs are URL-driven. |
-| `/match/[id]` | Match centre: scoreboard, summary form guide and recent meetings, events, statistics, lineups, form, head-to-head and calendar export. |
+| `/match/[id]` | Match centre: scoreboard, AI analysis, summary form guide and recent meetings, events, statistics, lineups, form, head-to-head and calendar export. |
 | `/team/[id]?season=YYYY` | Team profile, season schedule and provider-supplied record summaries. |
 | `/rankings?gender=men&confederation=UEFA` | FIFA world rankings: leader panel, top-three podium, points bars and movement. |
 | `/calendar?month=YYYY-MM&date=YYYY-MM-DD` | Month masthead with 12-month strip and stats, day grid, selected-day panel and `.ics` exports. |
@@ -91,6 +102,9 @@ GET /api/leagues/[slug]/standings?season=YYYY
 GET /api/leagues/[slug]/scorers?season=YYYY
 GET /api/leagues/[slug]/fixtures?season=YYYY
 GET /api/match/[id]
+GET /api/match/[id]/analysis
+POST /api/match/[id]/analysis?refresh=1
+POST /api/match/[id]/analysis?lang=ar
 GET /api/team/[id]?season=YYYY
 GET /api/rankings?gender=&confederation=&limit=
 GET /api/news?limit=
@@ -105,6 +119,7 @@ Successful JSON responses use `{ data, meta }`. Failures use `{ error: { message
 
 - **ESPN public soccer APIs** — fixtures, scores, tables, statistics, summaries, teams, search and news.
 - **FIFA public API** (`api.fifa.com`) — men's and women's world rankings.
+- **FFC-Vision via the FFC AI Gateway** — the only AI provider, used exclusively to reason over the ESPN dataset; it never fetches data of its own.
 - League metadata in `src/data/leagues.ts` is generated from ESPN's public core API by `scripts/generate-league-catalog.mjs`. It contains names, logos, aliases and classification only; results and tables are always fetched at runtime.
 
 Touchline is an independent project and is not affiliated with ESPN or FIFA. Provider terms and attribution requirements apply to their data. Headlines link to the original publisher; Touchline does not rehost articles.
@@ -117,7 +132,7 @@ src/
   components/
     layout/            Header, footer, brand mark, theme toggle
     providers/         Preferences and toast contexts
-    soccer/            Match rows, explorers, competition cards, news cards, date controls
+    soccer/            Match rows, explorers, competition cards, news cards, date controls, AI analysis panel
     competitions/      Competition directory explorer
     settings/          Settings panel
     ui/                Primitives, logos, time, countdown, favourites, calendar menu, share
@@ -128,6 +143,8 @@ src/
     fifa.ts            FIFA rankings adapter
     normalize.ts       Provider payload → internal types
     http.ts            Timeout, bounded retry, in-process cache, request de-duplication
+    ai/                FFC-Vision config, gateway client, schema validation and prompt
+    analysis/          Dataset assembly, file store and get-or-generate pipeline
     types.ts           Shared domain types
     validation.ts      Input validation shared by API routes
     calendar.ts        iCalendar generation
@@ -138,6 +155,18 @@ src/
 **Caching.** `fetchJson` adds a timeout, bounded retries (429/5xx/timeouts only), an in-process TTL cache and request de-duplication. Cache windows range from 30 seconds for live summaries to 21,600 seconds for FIFA rankings. Public API responses also set `s-maxage` and `stale-while-revalidate`, plus `X-Data-Source`.
 
 **Cache Components.** `next.config.ts` enables `cacheComponents` and `partialPrefetching`. Request-time data is read inside `<Suspense>` boundaries after `connection()`, and route pages remain non-async where required by this model. See [`docs/implementation-status.md`](docs/implementation-status.md) for details.
+
+## AI match analysis
+
+The summary tab of a match page can ask the AI to size the fixture up.
+
+**Separation of concerns.** ESPN is the only source of facts: the fixture, season standings, both teams' schedules and recent results, head-to-head meetings, provider statistics and any published market odds. The server assembles those into a typed dataset (`src/lib/analysis/dataset.ts`). FFC-Vision only analyses that payload — it never fetches anything and never sees the gateway key or anything but the assembled dataset.
+
+**What it produces.** Winner/draw probabilities, predicted score, expected goals, both-teams-to-score, over/under 1.5 and 2.5, expected yellow and red cards, first team to score, first-half outcome, head-to-head and recent-form commentary, tactical strengths and weaknesses and key factors — each item with a statistical explanation. The gateway's strict JSON contract is validated before anything is displayed (`src/lib/ai/analysis-schema.ts`); when the dataset is thin, the analysis is required to say so with a low reliability flag. Cards are estimated from competition norms and labelled as such when the provider publishes no card history.
+
+**Operational behaviour.** One analysis per match is stored as a gitignored JSON file in `.data/analyses/` and reused, with a freshness window by match state (6 hours scheduled, 15 minutes live/halftime, 24 hours finished) and de-duplication of concurrent generates. Generation is rate-limited per client IP, auth/model/rate-limit/timeout/parse/data failures map to explicit error codes in the documented envelope, and nothing is ever invented in place of a failed prediction.
+
+**Languages.** The report is always generated in English. When the UI language is Arabic, the panel asks the backend for an Arabic mirror (`POST ?lang=ar`): FFC-Vision translates the report text only, every number is validated against the English prediction (`assertSamePredictionNumbers`), and the mirror is stored alongside the original. Until a mirror exists the English report is shown with a small "translating" indicator; if translation fails or is rate-limited the panel degrades silently to English. Reports read in Arabic render with a simplified layout: headline probabilities and score up front, market numbers as compact stat cards and all statistical explanations collapsed under "Why?" disclosures.
 
 ## Local preferences
 
@@ -177,6 +206,7 @@ node scripts/generate-league-catalog.mjs
 - ESPN's endpoints are public but undocumented and can change without notice. Normalisation is defensive; when a field disappears the UI degrades to an honest empty state.
 - A single ESPN all-scoreboard response is capped at 1,000 events. Daily fixture lists are complete; very busy months may be flagged `limited: true`.
 - Some competitions publish no table or no player leaderboards for a given season. This is reported, not fabricated.
+- AI analysis is probabilistic, not a guarantee. When ESPN publishes no card statistics, expected cards are explicitly estimated from competition norms, and the model is instructed to lower its reliability rather than invent certainty.
 - The contact form composes a `mailto:` message in the user's mail client. There is no backend inbox, so delivery depends on the visitor's mail app.
 - JDwel's own APIs are protected by Cloudflare. They were not bypassed and are not used. See [`docs/inaccessible-apis.md`](docs/inaccessible-apis.md).
 - There is no multi-device sync: preferences are local by design.
