@@ -8,6 +8,7 @@
  * public product name (`AI_PUBLIC_NAME`); the base URL, key and real model id
  * stay in the server process.
  */
+import "server-only";
 import { AI_PUBLIC_NAME } from "./brand";
 
 export type AiProvider = "touchline-ai";

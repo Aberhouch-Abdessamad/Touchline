@@ -2,10 +2,12 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/plus-jakarta-sans";
 import "@fontsource-variable/cairo";
 import "./globals.css";
+import "./app-theme.css";
 import { PreferencesProvider } from "@/components/providers/PreferencesProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import { T } from "@/components/i18n/T";
 import {
@@ -75,8 +77,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   colorScheme: "light dark",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f3ed" },
-    { media: "(prefers-color-scheme: dark)", color: "#0c1410" },
+    { media: "(prefers-color-scheme: light)", color: "#f1f4f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#060c09" },
   ],
 };
 
@@ -116,6 +118,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 {children}
               </main>
               <SiteFooter />
+              <MobileTabBar />
             </div>
           </PreferencesProvider>
         </ToastProvider>
