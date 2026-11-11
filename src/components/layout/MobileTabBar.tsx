@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Newspaper, Search, Star, Trophy } from "lucide-react";
+import { CalendarDays, Newspaper, Search, Sparkles, Trophy } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import type { Dict } from "@/lib/i18n/dict";
 import { cn } from "@/lib/utils";
@@ -11,8 +11,8 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { href: "/matches", icon: CalendarDays },
   { href: "/competitions", icon: Trophy },
+  { href: "/predictions", icon: Sparkles },
   { href: "/news", icon: Newspaper },
-  { href: "/rankings", icon: Star },
   { href: "/search", icon: Search },
 ] as const;
 

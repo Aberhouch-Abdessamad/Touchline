@@ -3,6 +3,7 @@ import "@fontsource-variable/plus-jakarta-sans";
 import "@fontsource-variable/cairo";
 import "./globals.css";
 import "./app-theme.css";
+import "./predictions.css";
 import { PreferencesProvider } from "@/components/providers/PreferencesProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { SiteHeader } from "@/components/layout/SiteHeader";

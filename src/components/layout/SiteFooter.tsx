@@ -21,6 +21,7 @@ const FOOTER_GROUPS: FooterGroup[] = [
     links: [
       { href: "/matches", labelKey: "matches" },
       { href: "/competitions", labelKey: "competitions" },
+      { href: "/predictions", labelKey: "predictions" },
       { href: "/news", labelKey: "news" },
       { href: "/rankings", labelKey: "rankings" },
       { href: "/calendar", labelKey: "calendar" },
