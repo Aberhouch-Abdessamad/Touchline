@@ -2,8 +2,8 @@ import { defineDomain } from "../define";
 
 /**
  * News hub chrome: hero, lead-story rail, attribution and wire sections plus
- * empty/error states. Headlines, descriptions, sections and bylines are raw
- * ESPN data and stay untranslated at render time.
+ * empty/error states. Headlines, descriptions and sections are translated to
+ * Arabic server-side (see `lib/news-translate.ts`); bylines stay as published.
  */
 export const news = defineDomain({
   en: {

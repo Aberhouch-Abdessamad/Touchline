@@ -6,7 +6,7 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   const { startBackgroundVerification } = await import(
-    "./lib/predictions/maintain"
+    "@/lib/predictions/maintain"
   );
   startBackgroundVerification();
 }

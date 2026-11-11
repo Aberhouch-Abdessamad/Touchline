@@ -10,6 +10,7 @@ export const SITE_URL =
 export const NAV_ITEMS = [
   { href: "/matches", label: "Matches" },
   { href: "/competitions", label: "Competitions" },
+  { href: "/predictions", label: "AI Predictions" },
   { href: "/news", label: "News" },
   { href: "/rankings", label: "Rankings" },
   { href: "/calendar", label: "Calendar" },
@@ -22,6 +23,7 @@ export const FOOTER_LINKS = [
     links: [
       { href: "/matches", label: "Matches" },
       { href: "/competitions", label: "Competitions" },
+      { href: "/predictions", label: "AI Predictions" },
       { href: "/news", label: "News" },
       { href: "/rankings", label: "FIFA rankings" },
       { href: "/calendar", label: "Calendar" },
