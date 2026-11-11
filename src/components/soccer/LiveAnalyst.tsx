@@ -11,8 +11,9 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
-import { useI18n } from "@/lib/i18n";
+import { leagueDisplayName, useI18n } from "@/lib/i18n";
 import { live as liveDict } from "@/lib/i18n/domains/live";
+import { eventText, statLabel } from "@/lib/live-labels";
 import { cn } from "@/lib/utils";
 import { LeagueLogo, TeamLogo } from "@/components/ui/Logos";
 import type { Match } from "@/lib/types";
@@ -150,6 +151,8 @@ function Insight({
   events: HistoricalEventFact[];
   labels: { low: string; medium: string; high: string; stat: string; event: string };
 }) {
+  const { lang } = useI18n();
+  const insightKinds = (lang === "ar" ? liveDict.ar : liveDict.en).kinds;
   const cited = insight.eventRef
     ? events.find((event) => event.index === insight.eventRef)
     : undefined;
@@ -170,7 +173,7 @@ function Insight({
         <p className="live-insight__ref u-dir-ltr">
           <span className="live-insight__key">{labels.event}: </span>
           {cited.minute ? `${cited.minute} · ` : ""}
-          {cited.text}
+          {eventText(cited, insightKinds[kindLabel(cited.kind)], lang)}
         </p>
       ) : null}
     </li>
@@ -179,13 +182,14 @@ function Insight({
 
 /** One published statistical row as a mirrored bar with verbatim values. */
 function StatBar({ row }: { row: LiveStatRow }) {
+  const { lang } = useI18n();
   const total = row.homeValue + row.awayValue;
   const homeShare = total > 0 ? (row.homeValue / total) * 100 : 50;
   return (
     <li className="live-stat">
       <div className="live-stat__top">
         <span className="live-stat__value u-dir-ltr">{row.home || "0"}</span>
-        <span className="live-stat__label">{row.label || row.name}</span>
+        <span className="live-stat__label">{statLabel(row, lang)}</span>
         <span className="live-stat__value u-dir-ltr">{row.away || "0"}</span>
       </div>
       <div className="live-stat__track" aria-hidden="true">
@@ -370,6 +374,7 @@ function EventList({
   labels: { title: string; empty: string; minute: string; timelineIncomplete: string };
   kinds: (typeof liveDict)["en"]["kinds"];
 }) {
+  const { lang } = useI18n();
   if (events.length === 0) {
     return <p className="live-note">{labels.empty}</p>;
   }
@@ -388,7 +393,7 @@ function EventList({
                   </span>
                 ) : null}
               </span>
-              <span className="live-event__text">{event.text}</span>
+              <span className="live-event__text">{eventText(event, kinds[kindLabel(event.kind)], lang)}</span>
             </span>
           </li>
         ))}
@@ -414,7 +419,7 @@ function FinalReport({
   finalLabels: (typeof liveDict)["en"]["dashboard"]["final"];
   kinds: (typeof liveDict)["en"]["kinds"];
 }) {
-  const { f } = useI18n();
+  const { f, lang } = useI18n();
   const swingText = (swing: { min: number; max: number; range: number }) =>
     `${Math.round(swing.min * 100)}–${Math.round(swing.max * 100)}% (±${(
       swing.range * 100
@@ -542,7 +547,7 @@ function FinalReport({
               <li key={event.index}>
                 <span className="live-final__minute u-dir-ltr">{event.minute}</span>
                 <span className="live-final__kind">{kinds[kindLabel(event.kind)]}</span>
-                <span>{event.text}</span>
+                <span>{eventText(event, kinds[kindLabel(event.kind)], lang)}</span>
               </li>
             ))}
           </ul>
@@ -981,7 +986,7 @@ export function LiveAnalyst({
             {competition?.logo || competition?.name ? (
               <div className="live-head__comp">
                 <LeagueLogo src={competition.logo} name={competition.name} size={22} />
-                <span>{competition.name}</span>
+                <span>{leagueDisplayName({ slug: competition.slug ?? "", name: competition.name }, lang)}</span>
               </div>
             ) : null}
             <div className="live-head__teams">
