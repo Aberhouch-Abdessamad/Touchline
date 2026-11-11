@@ -48,8 +48,10 @@ function LiveSkeleton() {
   );
 }
 
-async function LiveContent({ id }: { id: string }) {
+async function LiveContent({ params }: { params: Params }) {
   await connection();
+  const { id } = await params;
+  if (!isTeamId(id)) notFound();
   let match: MatchDetails["match"] | null = null;
   try {
     // Only the header is needed server-side (teams, logos, competition); the
@@ -63,13 +65,12 @@ async function LiveContent({ id }: { id: string }) {
   return <LiveAnalyst matchId={id} initial={match} />;
 }
 
-export default async function LivePage({ params }: { params: Params }) {
-  const { id } = await params;
-  if (!isTeamId(id)) notFound();
-
+export default function LivePage({ params }: { params: Params }) {
+  // Route params are request-time data: read them inside the Suspense
+  // boundary so the static shell (skeleton) can be served instantly.
   return (
     <Suspense fallback={<LiveSkeleton />}>
-      <LiveContent id={id} />
+      <LiveContent params={params} />
     </Suspense>
   );
 }
