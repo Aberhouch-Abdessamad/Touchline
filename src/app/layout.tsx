@@ -4,13 +4,19 @@ import "@fontsource-variable/cairo";
 import "./globals.css";
 import "./app-theme.css";
 import "./predictions.css";
+<<<<<<< HEAD
 import "./app-3d.css";
+=======
+>>>>>>> bd33da1bc8aba80a975dcfa5da7ea3857aaecb97
 import { PreferencesProvider } from "@/components/providers/PreferencesProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
+<<<<<<< HEAD
 import { Depth3D } from "@/components/depth/Depth3D";
+=======
+>>>>>>> bd33da1bc8aba80a975dcfa5da7ea3857aaecb97
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import { T } from "@/components/i18n/T";
 import {
@@ -122,7 +128,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               </main>
               <SiteFooter />
               <MobileTabBar />
+<<<<<<< HEAD
               <Depth3D />
+=======
+>>>>>>> bd33da1bc8aba80a975dcfa5da7ea3857aaecb97
             </div>
           </PreferencesProvider>
         </ToastProvider>
