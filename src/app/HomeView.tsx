@@ -29,6 +29,7 @@ import type {
 } from "@/lib/types";
 import { FavoriteButton } from "@/components/ui/FavoriteButton";
 import { KickOffPulse } from "@/components/home/KickOffPulse";
+import { HomeStage3D } from "@/components/home/HomeStage3D";
 import { LeagueLogo, TeamLogo } from "@/components/ui/Logos";
 import { LocalTime } from "@/components/ui/LocalTime";
 import {
@@ -119,13 +120,16 @@ export function HomeMasthead({ meta }: { meta: ReactNode }) {
       </div>
 
       <div className="hm-mast__body">
-        <h1 className="hm-mast__title">
-          {t.home.masthead.titleLead}
-          <span className="hm-mast__title-accent">
-            {t.home.masthead.titleAccent}
-          </span>
-        </h1>
-        <p className="hm-mast__lede">{t.home.masthead.lede}</p>
+        <div className="hm-mast__copy">
+          <h1 className="hm-mast__title">
+            {t.home.masthead.titleLead}
+            <span className="hm-mast__title-accent">
+              {t.home.masthead.titleAccent}
+            </span>
+          </h1>
+          <p className="hm-mast__lede">{t.home.masthead.lede}</p>
+        </div>
+        <HomeStage3D />
       </div>
 
       <nav className="hm-mast__jump" aria-label={t.home.masthead.jumpAria}>
