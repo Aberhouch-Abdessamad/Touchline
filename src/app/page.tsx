@@ -11,8 +11,6 @@ import {
 import { LEAGUES } from "@/data/leagues";
 import type { League } from "@/data/leagues";
 import { competitionRank } from "@/lib/leaguePriority";
-import { localizeNews } from "@/lib/news-translate";
-import { serverPreferences } from "@/lib/i18n/server";
 import { seasonLabel, todayISO } from "@/lib/date";
 import type {
   Match,
@@ -482,8 +480,7 @@ async function NewsFront() {
   let articles: NewsArticle[] = [];
   let failed = false;
   try {
-    const [{ lang }, fetched] = await Promise.all([serverPreferences(), getNews(6)]);
-    articles = await localizeNews(fetched.slice(0, 5), lang);
+    articles = (await getNews(6)).slice(0, 5);
   } catch {
     failed = true;
   }

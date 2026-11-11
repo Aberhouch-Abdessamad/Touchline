@@ -2,8 +2,6 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { NewsSkeleton } from "@/components/soccer/NewsSkeleton";
 import { getNews } from "@/lib/api";
-import { localizeNews } from "@/lib/news-translate";
-import { serverPreferences } from "@/lib/i18n/server";
 import type { NewsArticle } from "@/lib/types";
 import { NewsView } from "./NewsView";
 
@@ -20,8 +18,7 @@ async function NewsFeed() {
   let articles: NewsArticle[] = [];
   let failed = false;
   try {
-    const [{ lang }, fetched] = await Promise.all([serverPreferences(), getNews(15)]);
-    articles = await localizeNews(fetched, lang);
+    articles = await getNews(15);
   } catch {
     failed = true;
   }

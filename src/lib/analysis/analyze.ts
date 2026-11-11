@@ -34,7 +34,6 @@ import {
   InsufficientMatchDataError,
 } from "./dataset";
 import { MatchNotFinishedError } from "./retrospective-dataset";
-import { recordPredictionSnapshot } from "@/lib/predictions/record";
 import {
   readStoredAnalysis,
   writeStoredAnalysis,
@@ -220,16 +219,6 @@ async function generateAnalysis(matchId: string): Promise<StoredAnalysis> {
         prediction,
       };
       await writeStoredAnalysis(analysis);
-      // AI Predictions League: lock the original pre-kickoff prediction. The
-      // ledger is write-once and ignores regenerations, so a later refresh can
-      // never replace what the model said before the match.
-      await recordPredictionSnapshot({
-        fixture: dataset.fixture,
-        prediction,
-        generatedAt: analysis.generatedAt,
-      }).catch((error) => {
-        console.error("[predictions] could not record prediction:", error);
-      });
       return analysis;
     } catch (error) {
       if (error instanceof InvalidAnalysisError) {

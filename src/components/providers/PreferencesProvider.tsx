@@ -280,16 +280,10 @@ export function PreferencesProvider({
     setPreferences((current) => ({ ...current, theme }));
   }, []);
 
-  const setLang = useCallback(
-    (lang: Locale) => {
-      setPreferences((current) => ({ ...current, lang }));
-      setCookie(LANG_COOKIE, lang);
-      // Server-rendered text (e.g. translated news) follows the cookie, so
-      // re-render the server components in the new language right away.
-      router.refresh();
-    },
-    [router],
-  );
+  const setLang = useCallback((lang: Locale) => {
+    setPreferences((current) => ({ ...current, lang }));
+    setCookie(LANG_COOKIE, lang);
+  }, []);
 
   const setTimezone = useCallback((timezone: string | null) => {
     setPreferences((current) => ({ ...current, timezone }));

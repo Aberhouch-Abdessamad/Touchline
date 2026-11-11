@@ -5,20 +5,20 @@
    ========================================================= */
 
 :root {
-  --bg: #f1f4f2;
-  --bg-elevated: #f7f9f8;
+  --bg: #f4f2ea;
+  --bg-elevated: #fbfaf5;
   --surface: #ffffff;
-  --surface-soft: #e8eeea;
-  --surface-ink: #0c1511;
-  --ink: #0d1612;
-  --ink-soft: #27322c;
-  --muted: #637068;
-  --faint: #8f9b94;
-  --line: #dfe6e2;
-  --line-strong: #c2ccc6;
-  --accent: #c8f24f;
-  --accent-strong: #a9e02a;
-  --accent-soft: #e9f8c2;
+  --surface-soft: #ece9df;
+  --surface-ink: #101a12;
+  --ink: #111b13;
+  --ink-soft: #2c372e;
+  --muted: #697267;
+  --faint: #93998f;
+  --line: #dcd8cb;
+  --line-strong: #b9b5a7;
+  --accent: #c9f05b;
+  --accent-strong: #aadd2f;
+  --accent-soft: #edf8c9;
   --accent-ink: #131c09;
   --live: #cf4527;
   --live-soft: #fbe5de;
@@ -35,11 +35,11 @@
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
   --container: 1180px;
-  --radius-xs: 10px;
-  --radius-sm: 14px;
-  --radius: 20px;
-  --radius-lg: 28px;
-  --radius-xl: 40px;
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius: 18px;
+  --radius-lg: 26px;
+  --radius-xl: 36px;
 
   --shadow-sm: 0 1px 2px rgba(17, 27, 19, 0.04),
     0 8px 24px -18px rgba(17, 27, 19, 0.3);
@@ -47,7 +47,7 @@
     0 24px 60px -32px rgba(17, 27, 19, 0.35);
   --shadow-accent: 0 18px 40px -24px rgba(120, 160, 20, 0.55);
 
-  --header-height: 66px;
+  --header-height: 74px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -101,18 +101,18 @@ html[dir="rtl"] * {
 }
 
 [data-theme="dark"] {
-  --bg: #060c09;
-  --bg-elevated: #0a120e;
-  --surface: #0e1812;
-  --surface-soft: #14211a;
+  --bg: #0b1310;
+  --bg-elevated: #0f1913;
+  --surface: #121d16;
+  --surface-soft: #18251c;
   --surface-ink: #eef4e8;
   --ink: #f1f5ea;
   --ink-soft: #d4dcd0;
-  --muted: #93a398;
+  --muted: #9aa89d;
   --faint: #6c7a70;
-  --line: #1b2a21;
-  --line-strong: #304539;
-  --accent: #cff55c;
+  --line: #24332a;
+  --line-strong: #3a4d3f;
+  --accent: #cdf470;
   --accent-strong: #b7e94b;
   --accent-soft: #223217;
   --accent-ink: #101a08;

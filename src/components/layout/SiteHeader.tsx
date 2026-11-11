@@ -9,7 +9,6 @@ import {
   Newspaper,
   Search,
   Settings,
-  Sparkles,
   Star,
   Trophy,
   X,
@@ -27,7 +26,6 @@ import { usePreferences } from "@/components/providers/PreferencesProvider";
 const ICONS: Record<string, typeof CalendarDays> = {
   "/matches": CalendarDays,
   "/competitions": Trophy,
-  "/predictions": Sparkles,
   "/news": Newspaper,
   "/rankings": Star,
   "/calendar": CalendarDays,

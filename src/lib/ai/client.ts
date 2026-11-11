@@ -7,7 +7,6 @@
  * product ("Touchline AI"); the gateway address, key and model id never
  * appear anywhere a client could read.
  */
-import "server-only";
 import { getAiConfig, AiConfigError, type AiConfig } from "./config";
 import { extractJsonObject } from "./analysis-schema";
 

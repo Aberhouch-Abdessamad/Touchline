@@ -10,7 +10,6 @@ import { news } from "./domains/news";
 import { settings } from "./domains/settings";
 import { content } from "./domains/content";
 import { home } from "./domains/home";
-import { predictions } from "./domains/predictions";
 import type { Locale } from "./core";
 
 /** The full dictionary shape, derived from the English domains. */
@@ -27,7 +26,6 @@ export type Dict = {
   settings: typeof settings.en;
   content: typeof content.en;
   home: typeof home.en;
-  predictions: typeof predictions.en;
 };
 
 const en: Dict = {
@@ -43,7 +41,6 @@ const en: Dict = {
   settings: settings.en,
   content: content.en,
   home: home.en,
-  predictions: predictions.en,
 };
 
 const ar: Dict = {
@@ -59,7 +56,6 @@ const ar: Dict = {
   settings: settings.ar,
   content: content.ar,
   home: home.ar,
-  predictions: predictions.ar,
 };
 
 export const DICT: Record<Locale, Dict> = { en, ar };
