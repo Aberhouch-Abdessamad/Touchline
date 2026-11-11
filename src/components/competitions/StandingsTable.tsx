@@ -86,7 +86,15 @@ export function StandingsTable({ groups }: { groups: StandingGroup[] }) {
                   return (
                     <tr
                       key={`${group.id ?? group.name}-${entry.team.id}`}
-                      className={cn(isFavourite && "is-favourite")}
+                      className={cn(
+                        isFavourite && "is-favourite",
+                        entry.note && "qualified",
+                      )}
+                      style={
+                        entry.note && entry.noteColor
+                          ? ({ "--note-color": entry.noteColor } as React.CSSProperties)
+                          : undefined
+                      }
                     >
                       <td className="rank-cell">
                         {entry.rank}
