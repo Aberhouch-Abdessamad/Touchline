@@ -204,13 +204,13 @@ export function assertSamePredictionNumbers(
 /* Parsing helpers                                                          */
 /* ------------------------------------------------------------------------ */
 
-function asRecord(value: unknown): Record<string, unknown> | null {
+export function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
 }
 
-function num(value: unknown, field: string, min: number, max: number): number {
+export function num(value: unknown, field: string, min: number, max: number): number {
   const parsed = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(parsed) || parsed < min || parsed > max) {
     throw new InvalidAnalysisError(`${field} is missing or out of range`);
@@ -218,7 +218,7 @@ function num(value: unknown, field: string, min: number, max: number): number {
   return parsed;
 }
 
-function text(
+export function text(
   value: unknown,
   field: string,
   { required = true, max = 800 }: { required?: boolean; max?: number } = {},
@@ -234,7 +234,7 @@ function text(
   return trimmed.slice(0, max);
 }
 
-function stringList(value: unknown, field: string, max = 6): string[] {
+export function stringList(value: unknown, field: string, max = 6): string[] {
   if (!Array.isArray(value)) {
     throw new InvalidAnalysisError(`${field} is not a list`);
   }

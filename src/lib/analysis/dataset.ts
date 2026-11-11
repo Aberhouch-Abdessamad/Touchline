@@ -187,7 +187,7 @@ const CARD_STATS = /card/i;
 /* Aggregation helpers                                                      */
 /* ------------------------------------------------------------------------ */
 
-function parseScore(value?: string): number | null {
+export function parseScore(value?: string): number | null {
   if (value === undefined || value.trim() === "") return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
@@ -305,7 +305,7 @@ function buildTeamProfile(
 /* Provider extraction (defensive reads from raw ESPN payloads)              */
 /* ------------------------------------------------------------------------ */
 
-function extractH2H(
+export function extractH2H(
   headToHead: HeadToHeadMatch[],
   fixtureHomeId: string,
 ): DatasetHeadToHead {
@@ -355,7 +355,7 @@ function extractH2H(
   };
 }
 
-function extractStats(details: MatchDetails): DatasetStatistics {
+export function extractStats(details: MatchDetails): DatasetStatistics {
   const preMatch =
     details.match.state !== "live" && details.match.state !== "halftime";
   const rows: ProviderStatRow[] = details.stats
@@ -377,7 +377,7 @@ function extractStats(details: MatchDetails): DatasetStatistics {
   };
 }
 
-function extractMarketOdds(raw: unknown): DatasetMarketOdds | undefined {
+export function extractMarketOdds(raw: unknown): DatasetMarketOdds | undefined {
   const pickcenter: unknown[] | undefined = (raw as { pickcenter?: unknown[] })
     ?.pickcenter;
   const pick = Array.isArray(pickcenter) ? pickcenter[0] : undefined;

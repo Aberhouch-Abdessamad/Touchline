@@ -75,7 +75,7 @@ export function getAiConfig(): AiConfig {
     ).trim(),
     timeoutMs: intFromEnv("FFC_VISION_TIMEOUT_MS", 60_000, 5_000, 120_000),
     retries: intFromEnv("FFC_VISION_RETRIES", 2, 0, 4),
-    maxTokens: intFromEnv("FFC_VISION_MAX_TOKENS", 8_000, 500, 12_000),
+    maxTokens: intFromEnv("FFC_VISION_MAX_TOKENS", 12_000, 500, 20_000),
     temperature: floatFromEnv("FFC_VISION_TEMPERATURE", 0.2, 0, 1),
     rateLimitPerHour: intFromEnv("AI_RATE_LIMIT_PER_HOUR", 10, 1, 500),
   };

@@ -36,6 +36,7 @@ export const analysis = defineDomain({
       insufficientData: "There is too little statistical history for this fixture to analyse responsibly.",
       upstream: "The football data provider could not supply the statistics for this match.",
       notFound: "No analysis is available for that match yet.",
+      notFinished: "This match has not finished, so it cannot be analysed retrospectively.",
       cachedFallback: "Showing the most recent stored analysis.",
       retry: "Try again",
     },
@@ -71,6 +72,7 @@ export const analysis = defineDomain({
     translating: "Translating the report…",
     translationUnavailable:
       "The Arabic translation is not ready yet — showing the English report.",
+    translateRetry: "Try translating again",
     reliability: {
       label: "Reliability",
       levels: { high: "High", medium: "Medium", low: "Low" },
@@ -110,6 +112,7 @@ export const analysis = defineDomain({
       insufficientData: "لا يوجد تاريخ إحصائي كافٍ لهذه المباراة لتحليل مسؤول.",
       upstream: "تعذر على مزود بيانات كرة القدم تزويد إحصاءات هذه المباراة.",
       notFound: "لا يوجد تحليل لهذه المباراة بعد.",
+      notFinished: "لم تنتهِ هذه المباراة بعد، لذا لا يمكن تحليلها بأثر رجعي.",
       cachedFallback: "نعرض أحدث تحليل محفوظ.",
       retry: "حاول مرة أخرى",
     },
@@ -144,6 +147,7 @@ export const analysis = defineDomain({
     about: "حول هذا التحليل",
     translating: "جارٍ ترجمة التقرير…",
     translationUnavailable: "الترجمة العربية غير جاهزة بعد؛ نعرض التقرير بالإنجليزية.",
+    translateRetry: "حاول الترجمة مجددًا",
     reliability: {
       label: "الموثوقية",
       levels: { high: "عالية", medium: "متوسطة", low: "منخفضة" },

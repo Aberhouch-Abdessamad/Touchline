@@ -19,6 +19,7 @@ Touchline is a complete, original Next.js application built on real public sport
 - **Browser-local personalisation.** Theme, time zone, favourite teams/competitions/matches, and kick-off reminders. No account, no server-side profile.
 - **Honest states.** Loading skeletons, empty states, retry paths and degraded-mode messaging throughout.
 - **AI match analysis.** On a match page, FFC-Vision reasons over the real ESPN dataset to predict the result, score, goals, cards and first-half markets — every number with an explanation, and a reliability flag when data is thin.
+- **AI historical match analysis.** Finished matches get a retrospective instead of a prediction: the factual timeline, in-match statistics and pre-match context are rebuilt from the provider payload in code, and FFC-Vision explains why the match ended that way — separating published facts from its own interpretation and never inventing missing data.
 - **Public JSON API.** Same-origin routes with validation, normalisation, cache metadata and a documented envelope.
 
 ## Tech stack
@@ -81,7 +82,7 @@ The football data APIs are public and need no key. The FFC-Vision gateway key is
 | `/matches?date=YYYY-MM-DD` | Day masthead with date stepper and week strip, live-score board, and fixtures grouped by competition with competition/state/favourite filters, paging and a refresh ticker. |
 | `/competitions` | Searchable, filterable directory of all 76 competitions. |
 | `/competitions/[slug]?tab=standings&season=YYYY` | Competition table, scorers or fixtures. Tabs are URL-driven. |
-| `/match/[id]` | Match centre: scoreboard, AI analysis, summary form guide and recent meetings, events, statistics, lineups, form, head-to-head and calendar export. |
+| `/match/[id]` | Match centre: scoreboard, AI analysis (prediction before kick-off, retrospective once finished), summary form guide and recent meetings, events, statistics, lineups, form, head-to-head and calendar export. |
 | `/team/[id]?season=YYYY` | Team profile, season schedule and provider-supplied record summaries. |
 | `/rankings?gender=men&confederation=UEFA` | FIFA world rankings: leader panel, top-three podium, points bars and movement. |
 | `/calendar?month=YYYY-MM&date=YYYY-MM-DD` | Month masthead with 12-month strip and stats, day grid, selected-day panel and `.ics` exports. |
@@ -103,8 +104,12 @@ GET /api/leagues/[slug]/scorers?season=YYYY
 GET /api/leagues/[slug]/fixtures?season=YYYY
 GET /api/match/[id]
 GET /api/match/[id]/analysis
+GET /api/match/[id]/analysis?kind=past
 POST /api/match/[id]/analysis?refresh=1
 POST /api/match/[id]/analysis?lang=ar
+POST /api/match/[id]/analysis?kind=past
+POST /api/match/[id]/analysis?kind=past&refresh=1
+POST /api/match/[id]/analysis?kind=past&lang=ar
 GET /api/team/[id]?season=YYYY
 GET /api/rankings?gender=&confederation=&limit=
 GET /api/news?limit=
@@ -113,7 +118,7 @@ GET /api/calendar?date=YYYY-MM-DD | ?month=YYYY-MM
 GET /api/health
 ```
 
-Successful JSON responses use `{ data, meta }`. Failures use `{ error: { message, status, code } }`. The calendar route returns `text/calendar` instead.
+Successful JSON responses use `{ data, meta }`. Failures use `{ error: { message, status, code } }`. The calendar route returns `text/calendar` instead. The analysis routes accept `kind=past` on either method to address the retrospective document of a finished match instead of the pre-match prediction.
 
 ## Data sources and attribution
 
@@ -144,7 +149,7 @@ src/
     normalize.ts       Provider payload → internal types
     http.ts            Timeout, bounded retry, in-process cache, request de-duplication
     ai/                FFC-Vision config, gateway client, schema validation and prompt
-    analysis/          Dataset assembly, file store and get-or-generate pipeline
+    analysis/          Dataset assembly, retrospective facts, file store and get-or-generate pipelines
     types.ts           Shared domain types
     validation.ts      Input validation shared by API routes
     calendar.ts        iCalendar generation
@@ -167,6 +172,16 @@ The summary tab of a match page can ask the AI to size the fixture up.
 **Operational behaviour.** One analysis per match is stored as a gitignored JSON file in `.data/analyses/` and reused, with a freshness window by match state (6 hours scheduled, 15 minutes live/halftime, 24 hours finished) and de-duplication of concurrent generates. Generation is rate-limited per client IP, auth/model/rate-limit/timeout/parse/data failures map to explicit error codes in the documented envelope, and nothing is ever invented in place of a failed prediction.
 
 **Languages.** The report is always generated in English. When the UI language is Arabic, the panel asks the backend for an Arabic mirror (`POST ?lang=ar`): FFC-Vision translates the report text only, every number is validated against the English prediction (`assertSamePredictionNumbers`), and the mirror is stored alongside the original. Until a mirror exists the English report is shown with a small "translating" indicator; if translation fails or is rate-limited the panel degrades silently to English. Reports read in Arabic render with a simplified layout: headline probabilities and score up front, market numbers as compact stat cards and all statistical explanations collapsed under "Why?" disclosures.
+
+## AI historical match analysis
+
+Finished matches get a retrospective instead of a prediction: the summary tab asks what actually happened and why it ended that way.
+
+**Facts are extracted in code.** Before the model is called, the server rebuilds the final and half-time score, the chronological event list (honouring the provider's goal, card, penalty and VAR flags, with a running score wherever it is derivable) and the in-match statistics from the raw ESPN summary (`src/lib/analysis/retrospective-dataset.ts`). The model never supplies the timeline: it can only annotate published events by index, and its factual echo — winner, final and half-time score and every event reference — is validated against the extracted facts (`src/lib/ai/historical-schema.ts`). A match the provider has not finished is rejected with `409 match_not_finished`.
+
+**Context never uses hindsight.** Pre-match context covers each side's results strictly before kick-off, head-to-head meetings before the fixture and the closing odds — never a match played afterwards. Anything the provider did not publish is flagged as unavailable rather than filled in, and an incomplete event list is labelled as such and suppresses the running score.
+
+**What it produces.** A summary, an explanation of why the match ended this way with the turning point pinned to a real event, annotated timeline entries, both teams' tactical notes, three to five key factors and a verdict. Each retrospective is stored in `.data/analyses/<id>-historical.json` beside the facts it was built from, with a 24-hour freshness window, per-client generation rate limiting and in-flight de-duplication. Arabic works the same way as the prediction: `POST ?kind=past&lang=ar` mirrors the report through FFC-Vision and validates every number, timeline reference and list length (`assertSameHistoricalNumbers`) before storing it.
 
 ## Local preferences
 

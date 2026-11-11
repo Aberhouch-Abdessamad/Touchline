@@ -13429,6 +13429,36 @@ html[dir="rtl"] .hm-close::after {
   color: var(--faint);
 }
 
+.analysis-note--action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.analysis-note__retry {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: color 0.2s var(--ease), background 0.2s var(--ease),
+    border-color 0.2s var(--ease);
+}
+
+.analysis-note__retry:hover {
+  background: var(--surface-soft);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
 /* ---- Idle / empty ------------------------------------------------------- */
 
 .analysis-empty {
@@ -14076,5 +14106,458 @@ html[dir="rtl"] .hm-close::after {
 
   .analysis-error__body {
     flex-basis: calc(100% - 46px);
+  }
+}
+
+/* ========================================================================== */
+/* Historical (retrospective) AI match analysis — .hist-*                     */
+/* ========================================================================== */
+
+.hist-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px 18px 18px;
+}
+
+/* ---- Factual result header ------------------------------------------------ */
+
+.hist-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.hist-header__team {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.hist-header__team--away {
+  justify-content: flex-end;
+}
+
+.hist-header__name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hist-header__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  text-align: center;
+}
+
+.hist-header__score {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.hist-header__status {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--win);
+  background: var(--win-soft);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+.hist-header__comp {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.hist-header__date {
+  font-size: 10px;
+  color: var(--faint);
+}
+
+.hist-header__ht {
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+/* ---- Sections -------------------------------------------------------------- */
+
+.hist-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hist-section__title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.hist-section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hist-section__meta {
+  font-size: 10px;
+  color: var(--faint);
+}
+
+.hist-why {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+/* ---- Turning point --------------------------------------------------------- */
+
+.hist-turning {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent-strong) 45%, var(--line));
+  border-radius: 10px;
+  background: var(--accent-soft);
+}
+
+.hist-turning__label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.hist-turning__ref {
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.hist-turning__fact {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--ink-soft);
+}
+
+.hist-turning__body {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* ---- Timeline of provider facts -------------------------------------------- */
+
+.hist-timeline {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  gap: 8px;
+  list-style: none;
+}
+
+.hist-event {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px 9px;
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.hist-event--home {
+  border-inline-start-color: var(--accent-strong);
+}
+
+.hist-event--away {
+  border-inline-start-color: var(--live);
+}
+
+.hist-event__line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.hist-event__minute {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--muted);
+  min-width: 28px;
+}
+
+.hist-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1.5px 8px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+
+.hist-chip--goal {
+  background: var(--win-soft);
+  color: var(--win);
+  border-color: color-mix(in srgb, var(--win) 35%, transparent);
+}
+
+.hist-chip--penalty-goal {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: color-mix(in srgb, var(--accent-strong) 45%, transparent);
+}
+
+.hist-chip--own-goal {
+  background: var(--loss-soft);
+  color: var(--loss);
+  border-color: color-mix(in srgb, var(--loss) 35%, transparent);
+}
+
+.hist-chip--penalty-missed,
+.hist-chip--yellow-card {
+  background: var(--draw-soft);
+  color: var(--draw);
+  border-color: color-mix(in srgb, var(--draw) 35%, transparent);
+}
+
+.hist-chip--red-card {
+  background: var(--live-soft);
+  color: var(--live);
+  border-color: color-mix(in srgb, var(--live) 38%, transparent);
+}
+
+.hist-event__side {
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--ink-soft);
+}
+
+.hist-event__score {
+  margin-inline-start: auto;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.hist-event__main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hist-event__text {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* The AI interpretation sits visually apart from the provider fact above it. */
+.hist-event__note {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 9px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 7px;
+  background: var(--surface-soft);
+}
+
+.hist-event__note p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.hist-event__impact strong {
+  font-weight: 750;
+  color: var(--ink-soft);
+}
+
+/* ---- Honest-gap notes ------------------------------------------------------ */
+
+.hist-note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--faint);
+}
+
+.hist-note--warn {
+  color: var(--draw);
+  font-weight: 650;
+}
+
+/* ---- Tactical breakdown ---------------------------------------------------- */
+
+.hist-tactics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.hist-tactics__team {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.hist-tactics__name {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.hist-tactics__team ul {
+  margin: 0;
+  padding-inline-start: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hist-tactics__team li {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* ---- Key factors ------------------------------------------------------------ */
+
+.hist-factors {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: hist-factor;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hist-factors li {
+  counter-increment: hist-factor;
+  position: relative;
+  padding-inline-start: 24px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.hist-factors li::before {
+  content: counter(hist-factor);
+  position: absolute;
+  inset-inline-start: 0;
+  top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+/* ---- Verdict ---------------------------------------------------------------- */
+
+.hist-verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 13px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent-strong) 45%, var(--line));
+  border-radius: 12px;
+  background: var(--accent-soft);
+}
+
+.hist-verdict__kicker {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.hist-verdict__headline {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.hist-verdict__body {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.hist-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+/* ---- Responsive ------------------------------------------------------------- */
+
+@media (max-width: 620px) {
+  .hist-header {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .hist-header__team,
+  .hist-header__team--away {
+    justify-content: center;
+  }
+
+  .hist-header__center {
+    order: -1;
+  }
+
+  .hist-tactics {
+    grid-template-columns: 1fr;
   }
 }

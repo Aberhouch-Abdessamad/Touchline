@@ -21,7 +21,7 @@ interface ApiErrorPayload {
   error?: { message?: string; code?: string };
 }
 
-function errorMessageKey(code: string | undefined): keyof (typeof analysisDict)["en"]["error"] {
+export function errorMessageKey(code: string | undefined): keyof (typeof analysisDict)["en"]["error"] {
   switch (code) {
     case "ai_not_configured":
       return "notConfigured";
@@ -41,6 +41,8 @@ function errorMessageKey(code: string | undefined): keyof (typeof analysisDict)[
       return "invalidResponse";
     case "insufficient_match_data":
       return "insufficientData";
+    case "match_not_finished":
+      return "notFinished";
     case "not_found":
       return "notFound";
     case "upstream_error":
@@ -443,7 +445,10 @@ export function MatchAnalysis({
       if (refresh) params.set("refresh", "1");
       if (language === "ar") params.set("lang", "ar");
       const query = params.toString();
-      const isTranslation = language === "ar";
+      // A refresh in Arabic rides in one backend flow (generate + translate),
+      // so the finished report arrives already in Arabic with no English
+      // flash in between; only the standalone mirror request uses the pill.
+      const isTranslation = !refresh && language === "ar";
 
       if (isTranslation) {
         setTranslating(true);
@@ -486,7 +491,7 @@ export function MatchAnalysis({
         if (mounted.current) {
           setAnalysis(data);
           setStatus("ready");
-          if (isTranslation) {
+          if (language === "ar") {
             setTranslating(false);
             setTranslationFailed(!data.translation);
           }
@@ -537,7 +542,7 @@ export function MatchAnalysis({
             <button
               type="button"
               className="analysis-refresh"
-              onClick={() => void analyze(true)}
+              onClick={() => void analyze(true, lang === "ar" ? "ar" : undefined)}
               title={a.regenerate}
               aria-label={a.regenerate}
             >
@@ -564,7 +569,19 @@ export function MatchAnalysis({
       lang === "ar" &&
       !analysis.translation &&
       translationFailed ? (
-        <p className="analysis-note">{a.translationUnavailable}</p>
+        <div className="analysis-note analysis-note--action">
+          <span>{a.translationUnavailable}</span>
+          <button
+            type="button"
+            className="analysis-note__retry"
+            onClick={() => {
+              translationAttempted.current = null;
+              void analyze(false, "ar");
+            }}
+          >
+            {a.translateRetry}
+          </button>
+        </div>
       ) : null}
 
       {status === "idle" ? (
@@ -577,7 +594,7 @@ export function MatchAnalysis({
           <button
             type="button"
             className="btn btn--accent analysis-cta"
-            onClick={() => void analyze(false)}
+            onClick={() => void analyze(true, lang === "ar" ? "ar" : undefined)}
           >
             <Target size={16} aria-hidden="true" />
             {a.empty.action}
@@ -618,7 +635,7 @@ export function MatchAnalysis({
           <button
             type="button"
             className="btn btn--ghost analysis-cta"
-            onClick={() => void analyze(Boolean(analysis))}
+            onClick={() => void analyze(Boolean(analysis), lang === "ar" ? "ar" : undefined)}
           >
             <RefreshCw size={15} aria-hidden="true" />
             {a.error.retry}

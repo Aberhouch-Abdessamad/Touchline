@@ -37,6 +37,8 @@ export interface ChatCompletionResult {
   model: string;
   promptTokens?: number;
   completionTokens?: number;
+  /** Whether the response hit the token budget before finishing. */
+  truncated?: boolean;
 }
 
 interface GatewayErrorBody {
@@ -188,9 +190,18 @@ export async function chatComplete(options: {
           body as {
             choices?: Array<{
               message?: { content?: unknown; reasoning?: unknown };
+              finish_reason?: unknown;
             }>;
           }
         )?.choices?.[0]?.message;
+        const finishReason =
+          typeof (body as {
+            choices?: Array<{ finish_reason?: unknown }>;
+          })?.choices?.[0]?.finish_reason === "string"
+            ? ((body as { choices: Array<{ finish_reason: string }> })
+                .choices[0].finish_reason as string)
+            : undefined;
+        const truncated = finishReason === "length";
         const content = message?.content;
         const reasoning = message?.reasoning;
         const answeredModel = (body as { model?: unknown })?.model;
@@ -222,6 +233,7 @@ export async function chatComplete(options: {
                   content: JSON.stringify(recovered),
                   model,
                   ...tokens,
+                  truncated,
                 };
               }
             } catch {
@@ -231,13 +243,16 @@ export async function chatComplete(options: {
           }
           lastError = new AiError(
             "invalid_response",
-            "FFC-Vision returned an empty analysis. Please try again.",
+            truncated
+              ? "FFC-Vision hit the token budget before returning the JSON object."
+              : "FFC-Vision returned an empty analysis. Please try again.",
           );
         } else {
           return {
             content,
             model,
             ...tokens,
+            truncated,
           };
         }
       }

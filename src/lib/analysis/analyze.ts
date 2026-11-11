@@ -32,6 +32,7 @@ import {
   buildMatchDataset,
   InsufficientMatchDataError,
 } from "./dataset";
+import { MatchNotFinishedError } from "./retrospective-dataset";
 import {
   readStoredAnalysis,
   writeStoredAnalysis,
@@ -140,8 +141,18 @@ function translateStoredAnalysis(
       });
       const translated = parseAnalysis(result.content);
       assertSamePredictionNumbers(source.prediction, translated);
+
+      // Re-read before writing: the pass takes tens of seconds, and the user
+      // may regenerate meanwhile. A mirror of an older generation must never
+      // overwrite the newer stored document (or flip it back to English).
+      const persisted = await readStoredAnalysis(source.matchId);
+      if (!persisted || persisted.generatedAt !== source.generatedAt) {
+        return source;
+      }
+      if (persisted.translation) return persisted;
+
       const withTranslation: StoredAnalysis = {
-        ...source,
+        ...persisted,
         translation: {
           translatedAt: new Date().toISOString(),
           translatedBy: result.model,
@@ -150,8 +161,10 @@ function translateStoredAnalysis(
       };
       await writeStoredAnalysis(withTranslation);
       return withTranslation;
-    } catch {
+    } catch (error) {
       // Best-effort by design: the English report is the source of truth.
+      // The reason is logged server-side only; it never contains the key.
+      console.error("[analysis-translation] attempt failed:", error);
       return source;
     }
   })();
@@ -174,15 +187,20 @@ async function generateAnalysis(matchId: string): Promise<StoredAnalysis> {
 
   const userMessage = buildAnalysisUserMessage(dataset);
   let lastInvalid: InvalidAnalysisError | undefined;
+  let lastTruncated = false;
 
   for (let attempt = 0; attempt <= INVALID_RESPONSE_RETRIES; attempt += 1) {
+    const correctiveNote =
+      attempt === 0
+        ? ""
+        : lastTruncated
+          ? "\n\nNote: your previous response was cut off by the token budget. Respond with exactly one complete JSON object that follows the contract, keeping every explanation to one or two concise sentences."
+          : `\n\nNote: your previous response was rejected because it did not follow the JSON contract (${lastInvalid?.reason}). Respond with exactly one valid JSON object that follows the contract, using no markdown and no commentary.`;
     const result = await chatComplete({
       system: ANALYSIS_SYSTEM_PROMPT,
-      user:
-        attempt === 0
-          ? userMessage
-          : `${userMessage}\n\nNote: your previous response was rejected because it did not follow the JSON contract (${lastInvalid?.reason}). Respond with exactly one valid JSON object that follows the contract, using no markdown and no commentary.`,
+      user: attempt === 0 ? userMessage : `${userMessage}${correctiveNote}`,
     });
+    lastTruncated = result.truncated === true;
 
     try {
       const prediction = parseAnalysis(result.content);
@@ -204,12 +222,21 @@ async function generateAnalysis(matchId: string): Promise<StoredAnalysis> {
     } catch (error) {
       if (error instanceof InvalidAnalysisError) {
         lastInvalid = error;
+        // Server-side only; the reason text never contains gateway secrets.
+        console.error(
+          `[analysis] attempt ${attempt + 1} rejected by contract:`,
+          error.message,
+        );
         continue;
       }
       if (error instanceof AiError && error.kind === "invalid_response") {
         // Unusable completion (typically a token budget exhausted by hidden
         // reasoning): one corrective re-ask before giving up.
         lastInvalid = new InvalidAnalysisError(error.message);
+        console.error(
+          `[analysis] attempt ${attempt + 1} returned an unusable completion:`,
+          error.message,
+        );
         continue;
       }
       throw error;
@@ -294,6 +321,9 @@ export function analysisFailure(error: unknown): AnalysisFailure {
 
   if (error instanceof InsufficientMatchDataError) {
     return { status: 422, code: "insufficient_match_data", message: error.message };
+  }
+  if (error instanceof MatchNotFinishedError) {
+    return { status: 409, code: "match_not_finished", message: error.message };
   }
   if (error instanceof TimeoutError) {
     return {
