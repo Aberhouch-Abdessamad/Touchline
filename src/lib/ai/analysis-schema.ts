@@ -1,5 +1,5 @@
 /**
- * Structured response contract for the FFC-Vision match analysis.
+ * Structured response contract for the Touchline AI match analysis.
  *
  * The prompt asks for exactly this JSON; `parseAnalysis` validates it before
  * anything is persisted or shown. Invalid or incomplete model output raises
@@ -66,7 +66,7 @@ export class InvalidAnalysisError extends Error {
   readonly reason: string;
 
   constructor(reason: string) {
-    super(`FFC-Vision returned an unusable analysis: ${reason}`);
+    super(`Touchline AI returned an unusable analysis: ${reason}`);
     this.name = "InvalidAnalysisError";
     this.reason = reason;
   }
@@ -250,7 +250,7 @@ export function stringList(value: unknown, field: string, max = 6): string[] {
 }
 
 /** Normalise a probability triple that must sum to 1. */
-function normaliseTriple(
+export function normaliseTriple(
   values: [number, number, number],
   field: string,
 ): [number, number, number] {

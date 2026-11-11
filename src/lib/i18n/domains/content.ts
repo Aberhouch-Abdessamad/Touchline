@@ -271,7 +271,7 @@ export const content = defineDomain({
       endpointsHeading: "Endpoints",
       basics: {
         heading: "Basics",
-        p1: "All routes are `GET`-only and relative to the site origin. Successful JSON responses use a `{ data, meta }` envelope. Failures use `{ error: { message, status, code } }` with an appropriate HTTP status.",
+        p1: "Routes are read with `GET` and relative to the site origin; the AI analysis and live-in-play routes additionally accept `POST` to spend an AI call (rate-limited per client). Successful JSON responses use a `{ data, meta }` envelope. Failures use `{ error: { message, status, code } }` with an appropriate HTTP status.",
         cacheP:
           "`Cache-Control` is set per route using `s-maxage` plus `stale-while-revalidate`, and the `X-Data-Source` response header names the provider. The calendar route is the only endpoint that does not return JSON.",
       },
@@ -363,6 +363,31 @@ export const content = defineDomain({
           params: ["Numeric ESPN event id."],
           notes:
             "Optional blocks are omitted or empty when the provider has not published them. That is normal before kick-off.",
+        },
+        analysis: {
+          summary:
+            "AI match analysis by Touchline AI over facts assembled in code from ESPN data: win/draw probabilities, predicted score, expected goals, markets and tactical notes. `kind=past` addresses the retrospective of a finished match.",
+          cache: "stored document; refreshed only by POST",
+          params: [
+            "Numeric ESPN event id.",
+            "`upcoming` (default) or `past`.",
+            "POST only: force a fresh generation.",
+            "When `ar`, request the Arabic mirror of the report.",
+          ],
+          notes:
+            "`GET` returns the stored document without spending an AI call; `POST` triggers a rate-limited generation. Anything the provider has not published is labelled as unavailable rather than estimated.",
+        },
+        live: {
+          summary:
+            "In-play AI analysis: minute-aware overview, who is dominating, live win probabilities, the next-goal estimate, momentum and the automatic final report after the final whistle.",
+          cache: "stored snapshots; refreshed only by POST",
+          params: [
+            "Numeric ESPN event id.",
+            "POST only: force a capture outside the configured interval.",
+            "When `ar`, generate the Arabic mirror of the latest snapshot.",
+          ],
+          notes:
+            "`GET` returns every stored capture and, once the match is over, the deterministic final report. `POST` captures on real triggers (score, events, statistics, interval) and appends, never overwrites. Any non-live match answers 409.",
         },
         team: {
           summary:
@@ -820,7 +845,7 @@ export const content = defineDomain({
       endpointsHeading: "نقاط النهاية",
       basics: {
         heading: "الأساسيات",
-        p1: "تقبل جميع المسارات `GET` حصرًا وتكون نسبية إلى أصل الموقع. وتستخدم استجابات JSON الناجحة غلاف `{ data, meta }`. أما الإخفاقات فتُعاد في `{ error: { message, status, code } }` مع رمز HTTP مناسب.",
+        p1: "تتم القراءة عبر `GET` وتكون المسارات نسبية إلى أصل الموقع؛ وتقبل مسارات التحليل بالذكاء الاصطناعي والتحليل المباشر أثناء اللعب `POST` أيضًا لاستهلاك استدعاء ذكاء اصطناعي (بحد معدل لكل عميل). وتستخدم استجابات JSON الناجحة غلاف `{ data, meta }`. أما الإخفاقات فتُعاد في `{ error: { message, status, code } }` مع رمز HTTP مناسب.",
         cacheP:
           "تُضبط ترويسة `Cache-Control` عند كل مسار باستخدام `s-maxage` مع `stale-while-revalidate`، وتُسمّي ترويسة الاستجابة `X-Data-Source` مزوّد البيانات. ومسار التقويم هو نقطة النهاية الوحيدة التي لا تعيد JSON.",
       },
@@ -912,6 +937,31 @@ export const content = defineDomain({
           params: ["معرّف حدث ESPN رقمي."],
           notes:
             "تُهمل الأقسام الاختيارية أو تظهر فارغة حين لم ينشرها المزوّد بعد. وهذا أمر طبيعي قبل بداية المباراة.",
+        },
+        analysis: {
+          summary:
+            "تحليل مباريات بالذكاء الاصطناعي من Touchline AI فوق وقائع تُجمَّع برمجيًا من بيانات ESPN: احتمالات الفوز والتعادل، النتيجة المتوقعة، الأهداف المتوقعة، الأسواق والملاحظات التكتيكية. ويعنون `kind=past` التحليل بأثر رجعي لمباراة منتهية.",
+          cache: "مستند مخزَّن؛ لا يُحدَّث إلا عبر POST",
+          params: [
+            "معرّف حدث ESPN رقمي.",
+            "‏`upcoming` (الافتراضي) أو `past`.",
+            "‏POST فقط: فرض توليد جديد.",
+            "عند القيمة `ar` يُطلب المرآة العربية للتقرير.",
+          ],
+          notes:
+            "يعيد `GET` المستند المخزَّن دون استهلاك استدعاء ذكاء اصطناعي؛ ويشغّل `POST` توليدًا خاضعًا لحد المعدل. وما لم يُنشره المزوّد يُوسَم بأنه غير متوفر بدلًا من تقديره.",
+        },
+        live: {
+          summary:
+            "تحليل مباشر أثناء اللعب: نظرة عامة تراعي دقائق المباراة، من يفرض سيطرته، احتمالات الفوز اللحظية، تقدير الهدف التالي، الزخم، والتقرير النهائي التلقائي بعد صافرة النهاية.",
+          cache: "لقطات مخزَّنة؛ لا تُحدَّث إلا عبر POST",
+          params: [
+            "معرّف حدث ESPN رقمي.",
+            "‏POST فقط: فرض التقاط خارج الفاصل الزمني المهيأ.",
+            "عند القيمة `ar` تُولَّد المرآة العربية لآخر لقطة.",
+          ],
+          notes:
+            "يعيد `GET` كل اللقطات المخزّنة، وبعد انتهاء المباراة يحسب التقرير النهائي الحتمي أيضًا. ويلتقط `POST` عند محفزات حقيقية (النتيجة، الأحداث، الإحصاءات، الفاصل الزمني) ويضيف لقطة جديدة دون الكتابة فوق الموجودة. وأي مباراة غير حية تعيد 409.",
         },
         team: {
           summary:

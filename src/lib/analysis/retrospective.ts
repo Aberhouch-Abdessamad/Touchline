@@ -6,17 +6,18 @@
  *   2. Extract the deterministic facts in code: final/half-time score,
  *      chronological event list with indexed refs, in-match statistics and
  *      the pre-match context (results and meetings strictly before kick-off).
- *   3. Send the structured dataset to FFC-Vision through the backend client.
+ *   3. Send the structured dataset to Touchline AI through the backend client.
  *   4. Validate the structured JSON response, including the factual echo
  *      (winner, final and half-time score) against the extracted facts.
  *   5. Persist and return the retrospective document.
  *   6. Optionally (on request) mirror the report text into Arabic through
- *      FFC-Vision, validate it against the English numbers and persist it.
+ *      Touchline AI, validate it against the English numbers and persist it.
  *
  * The pipeline shares the prediction feature's AI client, provider config
  * and file store; only the dataset, contract and prompts are its own.
  * In-flight requests are de-duplicated per match.
  */
+import { AI_PUBLIC_NAME } from "@/lib/ai/brand";
 import { getAiConfig } from "@/lib/ai/config";
 import { AiError, chatComplete } from "@/lib/ai/client";
 import { InvalidAnalysisError } from "@/lib/ai/analysis-schema";
@@ -115,7 +116,7 @@ function translateStoredHistorical(
         ...persisted,
         translation: {
           translatedAt: new Date().toISOString(),
-          translatedBy: result.model,
+          translatedBy: AI_PUBLIC_NAME,
           analysis: translated,
         },
       };
@@ -139,7 +140,7 @@ async function generateHistorical(matchId: string): Promise<StoredHistorical> {
   if (!config.apiKey || !config.baseUrl) {
     throw new AiError(
       "not_configured",
-      "FFC-Vision credentials are not configured on this server.",
+      "Touchline AI credentials are not configured on this server.",
     );
   }
 
@@ -177,9 +178,9 @@ async function generateHistorical(matchId: string): Promise<StoredHistorical> {
         version: 1,
         kind: "historical",
         matchId,
-        provider: "ffc-vision",
-        model: config.model,
-        answeredBy: result.model,
+        provider: "touchline-ai",
+        model: AI_PUBLIC_NAME,
+        answeredBy: AI_PUBLIC_NAME,
         generatedAt: new Date().toISOString(),
         promptTokens: result.promptTokens,
         completionTokens: result.completionTokens,
@@ -228,7 +229,7 @@ async function generateHistorical(matchId: string): Promise<StoredHistorical> {
   throw new AiError(
     "invalid_response",
     lastInvalid?.message ??
-      "FFC-Vision returned an unusable historical analysis.",
+      "Touchline AI returned an unusable historical analysis.",
   );
 }
 

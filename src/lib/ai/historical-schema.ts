@@ -1,5 +1,5 @@
 /**
- * Structured response contract for the FFC-Vision historical (retrospective)
+ * Structured response contract for the Touchline AI historical (retrospective)
  * match analysis.
  *
  * Unlike the prediction contract, every *fact* (final score, half-time,

@@ -1,9 +1,9 @@
 /**
- * Structured dataset for the FFC-Vision match analysis.
+ * Structured dataset for the Touchline AI match analysis.
  *
  * Everything here comes from the football data APIs (ESPN public soccer
  * endpoints). Nothing is invented: every block carries its own availability
- * flag so missing statistics stay visibly missing. FFC-Vision only reasons
+ * flag so missing statistics stay visibly missing. The AI only reasons
  * over this payload — it never fetches data itself.
  */
 import { getStandings } from "@/lib/api";

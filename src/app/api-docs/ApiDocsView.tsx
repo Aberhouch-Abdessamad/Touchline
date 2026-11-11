@@ -24,7 +24,7 @@ interface ParamSpec {
 
 interface EndpointSpec {
   key: EndpointKey;
-  method: "GET";
+  method: "GET" | "POST" | "GET · POST";
   path: string;
   example: string;
   params?: ParamSpec[];
@@ -91,6 +91,29 @@ const ENDPOINTS: EndpointSpec[] = [
     path: "/api/match/[id]",
     example: "/api/match/401234567",
     params: [{ name: "id", type: "path", required: true }],
+  },
+  {
+    key: "analysis",
+    method: "GET · POST",
+    path: "/api/match/[id]/analysis",
+    example: "/api/match/[id]/analysis?kind=past",
+    params: [
+      { name: "id", type: "path", required: true },
+      { name: "kind", type: "upcoming | past" },
+      { name: "refresh", type: "boolean (POST)" },
+      { name: "lang", type: "en | ar" },
+    ],
+  },
+  {
+    key: "live",
+    method: "GET · POST",
+    path: "/api/match/[id]/live",
+    example: "/api/match/[id]/live",
+    params: [
+      { name: "id", type: "path", required: true },
+      { name: "refresh", type: "boolean (POST)" },
+      { name: "lang", type: "en | ar" },
+    ],
   },
   {
     key: "team",

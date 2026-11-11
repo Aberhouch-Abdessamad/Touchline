@@ -6,15 +6,16 @@
  *   2. Retrieve both teams' statistics (schedule results, standings, provider
  *      season statistics) and the head-to-head record.
  *   3. Prepare the structured dataset.
- *   4. Send it to FFC-Vision through the backend AI client.
+ *   4. Send it to Touchline AI through the backend AI client.
  *   5. Validate and parse the structured JSON response.
  *   6. Persist and return the analysis.
  *   7. Optionally (on request) mirror the report text into Arabic through
- *      FFC-Vision, validate it against the English numbers and persist it.
+ *      Touchline AI, validate it against the English numbers and persist it.
  *
  * In-flight requests are de-duplicated per match so "Analyze This Match"
  * clicks from several viewers share one gateway call.
  */
+import { AI_PUBLIC_NAME } from "@/lib/ai/brand";
 import { getAiConfig } from "@/lib/ai/config";
 import { AiError, chatComplete } from "@/lib/ai/client";
 import {
@@ -155,7 +156,7 @@ function translateStoredAnalysis(
         ...persisted,
         translation: {
           translatedAt: new Date().toISOString(),
-          translatedBy: result.model,
+          translatedBy: AI_PUBLIC_NAME,
           prediction: translated,
         },
       };
@@ -179,7 +180,7 @@ async function generateAnalysis(matchId: string): Promise<StoredAnalysis> {
   if (!config.apiKey || !config.baseUrl) {
     throw new AiError(
       "not_configured",
-      "FFC-Vision credentials are not configured on this server.",
+      "Touchline AI credentials are not configured on this server.",
     );
   }
 
@@ -207,9 +208,9 @@ async function generateAnalysis(matchId: string): Promise<StoredAnalysis> {
       const analysis: StoredAnalysis = {
         version: 1,
         matchId,
-        provider: "ffc-vision",
-        model: config.model,
-        answeredBy: result.model,
+        provider: "touchline-ai",
+        model: AI_PUBLIC_NAME,
+        answeredBy: AI_PUBLIC_NAME,
         generatedAt: new Date().toISOString(),
         matchState: dataset.fixture.state,
         promptTokens: result.promptTokens,
@@ -245,7 +246,7 @@ async function generateAnalysis(matchId: string): Promise<StoredAnalysis> {
 
   throw new AiError(
     "invalid_response",
-    lastInvalid?.message ?? "FFC-Vision returned an unusable analysis.",
+    lastInvalid?.message ?? "Touchline AI returned an unusable analysis.",
   );
 }
 
@@ -276,7 +277,7 @@ export function analysisFailure(error: unknown): AnalysisFailure {
           status: 503,
           code: "ai_not_configured",
           message:
-            "FFC-Vision is not configured on this server. Set FFC_VISION_API_KEY in .env.local and restart.",
+            "Touchline AI is not configured on this server. Set AI_API_KEY in .env.local and restart.",
         };
       case "auth_failed":
         return {

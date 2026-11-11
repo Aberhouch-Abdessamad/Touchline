@@ -1,5 +1,5 @@
 /**
- * Prompt construction for the FFC-Vision match analysis.
+ * Prompt construction for the Touchline AI match analysis.
  * The system message fixes the persona and the output contract; the user
  * message carries only the structured dataset built from the football API.
  */
@@ -9,10 +9,14 @@ import {
   AI_HISTORICAL_JSON_CONTRACT_V1,
   type HistoricalAnalysis,
 } from "./historical-schema";
+import { AI_LIVE_JSON_CONTRACT_V1, type LiveAnalysis } from "./live-schema";
 import type { MatchDataset } from "@/lib/analysis/dataset";
+import type {
+  LiveDataset,
+} from "@/lib/analysis/live-dataset";
 import type { RetrospectiveDataset } from "@/lib/analysis/retrospective-dataset";
 
-export const ANALYSIS_SYSTEM_PROMPT = `You are FFC-Vision, a professional football statistics analyst working for the Touchline match centre.
+export const ANALYSIS_SYSTEM_PROMPT = `You are Touchline AI, a professional football statistics analyst working for the Touchline match centre.
 
 Your job:
 - Analyse ONE fixture using only the structured dataset provided in the user message.
@@ -135,7 +139,7 @@ export function buildTranslationUserMessage(
  * the model only authors interpretation and must never contradict or extend
  * the facts.
  */
-export const HISTORICAL_SYSTEM_PROMPT = `You are FFC-Vision, a professional football statistics analyst working for the Touchline match centre.
+export const HISTORICAL_SYSTEM_PROMPT = `You are Touchline AI, a professional football statistics analyst working for the Touchline match centre.
 
 Your job:
 - Write the retrospective analysis of ONE finished football match, using only the structured dataset in the user message.
@@ -250,6 +254,167 @@ export function buildHistoricalTranslationUserMessage(
 ): string {
   return [
     `Translate every free-text field of this retrospective match analysis JSON into Arabic. Return the JSON object with the same structure and identical numbers, references and scores.`,
+    ``,
+    JSON.stringify(analysis, null, 2),
+  ].join("\n");
+}
+
+/* ----------------------------------------------------------------------- */
+/* Live (in-play) analysis prompts                                          */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * The live pass re-analyses the same fixture as it progresses: the running
+ * score, the minute, published events and statistics are facts extracted in
+ * code; the model authors interpretation, its own live probability estimate
+ * and a dominance reading. Dominance is who is dictating play — it is never
+ * a win probability, and the two must not be conflated.
+ */
+export const LIVE_SYSTEM_PROMPT = `You are Touchline AI, a professional football statistics analyst working for the Touchline match centre's live desk.
+
+Your job:
+- Assess ONE football match that is in play RIGHT NOW, using only the structured dataset in the user message.
+- The dataset was extracted from the provider's published match summary: the current score and clock, a chronological event list with indexed refs, in-match statistics, the frozen pre-match context and (when stored) the previous live analysis and the pre-match prediction.
+- Time-awareness matters: your reading must reflect the minute. A one-goal lead in the 20th minute is a different match from the same lead in the 88th; the analysis should say where in the match the story currently stands.
+- Never invent or contradict a fact. If a statistic is not published in the dataset, treat it as unavailable — say so plainly instead of guessing. In particular: if no expected-goals figure is published, do not invent one.
+- The dataset contains nothing from outside this match; never reference other fixtures, players not in the event list or league tables.
+
+Semantic rules (strict):
+- "dominance" (homePercent + awayPercent = 100) is analytical control — possession, territory, shot volume and pressure. It is NOT a win probability. Never justify a dominance number with the scoreline, and never turn a dominance share into a chance of winning.
+- "probabilities" is your live estimate of the final result; home + draw + away must equal 1. Explain the estimate from the score, the minute, the events and the statistics, and use changeNote when the estimate moved since the previous capture and you can say why.
+- "nextGoal" asks for the next goal's destination. Only answer with numbers when the evidence (shot volume, pressure, the clock) genuinely supports a direction; otherwise set available to false, omit the numbers and explain honestly that the data does not support an answer yet.
+- "tactical.confirmed" holds only what the published statistics or events directly support; "tactical.interpretation" is your reading of shape, tempo or pressing. Keep the two lists separate — a confirmed entry must cite its statistic or event.
+- "insights" (0 to 4) are the most important things a viewer should know right now. Each cites its eventRef (1-based into the LIVE EVENTS list) when it is about an event; "stat" may name the published statistic supporting it. Do not reference events that are not in the list.
+- "risks" (2 to 4) name what could change this reading: a substitution, a red card, the clock, a momentum swing. Never present a guaranteed outcome; live football is not deterministic.
+- Explain probability changes across captures when the previous analysis is provided: say what in the new facts (score, an event, a statistic) moved the estimate.
+
+Reliability:
+- Early in the match (little data, thin statistics) or when key statistics are unpublished, set reliability.insufficientData to true and reliability.level to "low", and explain what is thin. Do not hide missing data.
+
+Output contract:
+- Respond with a single valid JSON object and nothing else (no markdown fences, no commentary).
+- The JSON object must follow this exact shape:
+${AI_LIVE_JSON_CONTRACT_V1}
+
+Write all free-text fields in English. Keep explanations concise and factual (one or two sentences each). Do not mention that you are an AI model.`;
+
+/**
+ * Serialise the live dataset into the user message. Fixed property order
+ * keeps the prompt deterministic across identical in-play states.
+ */
+export function buildLiveUserMessage(dataset: LiveDataset): string {
+  const { facts } = dataset;
+  const context = dataset.context;
+  return [
+    `Assess this football match that is in play right now. Return the JSON object exactly as defined.`,
+    ``,
+    `FIXTURE & CURRENT STATE`,
+    JSON.stringify(
+      {
+        match: facts.match,
+        minuteLabel: facts.minuteLabel,
+        minute: facts.minuteValue,
+        clockValueSeconds: facts.clockValue,
+        score: facts.score,
+        winnerNow: facts.winnerNow,
+      },
+      null,
+      2,
+    ),
+    ``,
+    `LIVE EVENTS (facts extracted from the provider; refs are 1-based in this order)`,
+    JSON.stringify(
+      {
+        provider: "espn",
+        complete: facts.timelineComplete,
+        note: facts.timelineComplete
+          ? "Every goal so far is attributed; the running score after each scoring fact is exact."
+          : "The provider's event list is incomplete; the running score is not offered. Do not reconstruct it.",
+        substitutions: facts.substitutions,
+        events: facts.events,
+      },
+      null,
+      2,
+    ),
+    ``,
+    `LIVE STATISTICS (provider in-match totals; missing values are unavailable)`,
+    JSON.stringify(facts.statistics, null, 2),
+    ``,
+    `PREVIOUS LIVE ANALYSIS (your previous capture for this match; omit none of its meaning)`,
+    JSON.stringify(
+      dataset.previous
+        ? {
+            capturedAt: dataset.previous.capturedAt,
+            minuteLabel: dataset.previous.minuteLabel,
+            minute: dataset.previous.clockValue,
+            score: dataset.previous.score,
+            trigger: dataset.previous.trigger,
+            analysis: dataset.previous.analysis,
+          }
+        : null,
+      null,
+      2,
+    ),
+    ``,
+    `ANALYSIS TRAJECTORY (every stored capture so far, oldest first)`,
+    JSON.stringify(dataset.trajectory, null, 2),
+    ``,
+    `PRE-MATCH CONTEXT (frozen strictly before kick-off; no later matches are included)`,
+    JSON.stringify(
+      {
+        home: context.home,
+        away: context.away,
+        headToHead: context.headToHead,
+        ...(context.marketOdds
+          ? {
+              marketOdds: {
+                ...context.marketOdds,
+                note: "Closing odds published before kick-off; they are pre-match expectations, part of the context, not the result.",
+              },
+            }
+          : {}),
+      },
+      null,
+      2,
+    ),
+    ...(dataset.preMatchPrediction
+      ? [
+          ``,
+          `PRE-MATCH PREDICTION (the model's own pre-kick-off prediction, stored before this match started)`,
+          JSON.stringify(dataset.preMatchPrediction, null, 2),
+        ]
+      : []),
+    ``,
+    `DATA QUALITY`,
+    JSON.stringify(facts.dataQuality, null, 2),
+  ].join("\n");
+}
+
+/** Translation pass for the live snapshot (mirror rules, same numbers). */
+export const LIVE_TRANSLATION_SYSTEM_PROMPT = `You are the Arabic sports editor for the Touchline match centre.
+
+A colleague produced the live (in-play) football analysis JSON in the user message. Translate its free-text fields into clear, natural Arabic.
+
+Rules:
+- Translate language only. Never change, round, reorder or reinterpret a number, statistic, probability or event reference.
+- Copy every numeric field exactly as written (same digits, same order), including dominances, probabilities and nextGoal numbers.
+- Keep the values "home", "away", "even", "high", "medium" and "low" in English exactly as they are.
+- Keep each explanation and risk to one or two concise sentences, like the source.
+- Write club and player names in their common Arabic form.
+- Never add information that is not in the source.
+
+Output contract:
+- Respond with a single valid JSON object and nothing else (no markdown fences, no commentary).
+- Keep exactly the same keys, nesting, array lengths and order as the input; only the text changes. Presence rules hold: a missing "changeNote" or "momentumNote" stays missing, and "nextGoal.available" keeps its value.
+- Use this shape as the reference:
+${AI_LIVE_JSON_CONTRACT_V1}`;
+
+/** User message for the live Arabic translation pass. */
+export function buildLiveTranslationUserMessage(
+  analysis: LiveAnalysis,
+): string {
+  return [
+    `Translate every free-text field of this live match analysis JSON into Arabic. Return the JSON object with the same structure and identical numbers and references.`,
     ``,
     JSON.stringify(analysis, null, 2),
   ].join("\n");

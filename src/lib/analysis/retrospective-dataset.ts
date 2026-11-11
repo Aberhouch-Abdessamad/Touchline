@@ -149,7 +149,9 @@ export interface RetrospectiveDataset {
 /* Event fact extraction (provider flags first, label sniffing second)      */
 /* ------------------------------------------------------------------------ */
 
-function classifyEvent(raw: any): HistoricalEventKind | null {
+// The live pipeline reuses these fact-extraction helpers on the provider
+// payload mid-match; they are exported alongside `buildRetrospectiveDataset`.
+export function classifyEvent(raw: any): HistoricalEventKind | null {
   if (!raw || typeof raw !== "object") return null;
   const typeText = typeof raw.type?.text === "string" ? raw.type.text : "";
   const typeType = typeof raw.type?.type === "string" ? raw.type.type : "";
@@ -195,7 +197,7 @@ function classifyEvent(raw: any): HistoricalEventKind | null {
   return null;
 }
 
-function playerNames(raw: any): string[] {
+export function playerNames(raw: any): string[] {
   const names = new Set<string>();
   for (const athlete of Array.isArray(raw.athletesInvolved) ? raw.athletesInvolved : []) {
     const name = typeof athlete?.displayName === "string" ? athlete.displayName.trim() : "";
@@ -211,13 +213,13 @@ function playerNames(raw: any): string[] {
   return [...names].slice(0, 3);
 }
 
-function rawEventsOf(raw: any): any[] {
+export function rawEventsOf(raw: any): any[] {
   if (Array.isArray(raw.keyEvents)) return raw.keyEvents;
   const competition = raw?.header?.competitions?.[0];
   return Array.isArray(competition?.details) ? competition.details : [];
 }
 
-function competitorSides(raw: any): Map<string, "home" | "away"> {
+export function competitorSides(raw: any): Map<string, "home" | "away"> {
   const sides = new Map<string, "home" | "away">();
   const competitors: any[] = raw?.header?.competitions?.[0]?.competitors ?? [];
   for (const competitor of competitors) {
@@ -234,7 +236,7 @@ function competitorSides(raw: any): Map<string, "home" | "away"> {
  * final score exactly — otherwise the timeline is labelled incomplete and
  * no running score is offered (an honest gap, never a guess).
  */
-function runningScores(
+export function runningScores(
   events: HistoricalEventFact[],
   finalScore: { home: number; away: number },
 ): boolean {
@@ -310,8 +312,10 @@ function aggregateRecord(results: DatasetRecentResult[]): PreMatchTeamRecord {
  * Schedule-derived pre-fixture form. Unlike `buildTeamProfile` (prediction
  * flow) this counts every finished result before kick-off, not a capped
  * recent window, so the retrospective sees the exact season-to-date table.
+ * The live analyst reuses it to freeze the pre-kick-off context at the first
+ * capture.
  */
-function preMatchContext(
+export function preMatchContext(
   fixtures: TeamFixture[],
   teamId: string,
   teamName: string,

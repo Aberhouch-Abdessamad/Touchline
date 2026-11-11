@@ -28,6 +28,7 @@ import { RemindButton } from "@/components/ui/RemindButton";
 import { NewsList } from "@/components/soccer/NewsCard";
 import { MatchAnalysis } from "@/components/soccer/MatchAnalysis";
 import { MatchHistory } from "@/components/soccer/MatchHistory";
+import { MatchLiveEntry } from "@/components/soccer/MatchLiveEntry";
 import { EmptyState, StatusPill } from "@/components/ui/Primitives";
 import { leagueDisplayName, useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -1181,10 +1182,11 @@ export function MatchDetailView({
     match.state === "canceled";
   // AI analysis is offered for any playable/live/finished match, but a
   // postponed or abandoned fixture has nothing meaningful to analyse.
-  // Finished matches get the retrospective panel, everything playable keeps
-  // the prediction panel.
+  // In-play matches get the live analyst panel, finished matches the
+  // retrospective panel, everything playable keeps the prediction panel.
+  const liveAvailable = match.state === "live" || match.state === "halftime";
   const analysisAvailable =
-    match.state !== "postponed" && match.state !== "canceled";
+    !liveAvailable && match.state !== "postponed" && match.state !== "canceled";
   const historicalAvailable = match.state === "finished";
 
   return (
@@ -1226,7 +1228,13 @@ export function MatchDetailView({
         <div className="match-main">
           {tab === "summary" ? (
             <>
-              {analysisAvailable ? (
+              {liveAvailable ? (
+                <MatchLiveEntry
+                  matchId={match.id}
+                  homeName={match.home.shortName}
+                  awayName={match.away.shortName}
+                />
+              ) : analysisAvailable ? (
                 historicalAvailable ? (
                   <MatchHistory match={match} />
                 ) : (

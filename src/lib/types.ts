@@ -273,4 +273,6 @@ export interface ApiMeta {
   attribution: string;
   fetchedAt: string;
   cacheSeconds: number;
+  /** Live routes only: suggested seconds before the client polls again. */
+  pollAfterSeconds?: number;
 }

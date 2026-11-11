@@ -1,9 +1,11 @@
 /**
- * FFC AI Gateway client (OpenAI-compatible `POST /v1/chat/completions`).
+ * Private AI gateway client (OpenAI-compatible `POST /v1/chat/completions`).
  *
  * Server-only. The credential never touches logs, error messages, or the
  * response we hand back to callers — errors carry a stable `kind` that route
- * handlers translate into HTTP statuses.
+ * handlers translate into HTTP statuses. Error text names only the public
+ * product ("Touchline AI"); the gateway address, key and model id never
+ * appear anywhere a client could read.
  */
 import { getAiConfig, AiConfigError, type AiConfig } from "./config";
 import { extractJsonObject } from "./analysis-schema";
@@ -55,7 +57,7 @@ function classifyHttpError(status: number, body: GatewayErrorBody): AiError {
   if (status === 401 || status === 403 || code === "authentication_failed") {
     return new AiError(
       "auth_failed",
-      "FFC-Vision rejected the configured API key.",
+      "The configured Touchline AI key was rejected.",
       status,
     );
   }
@@ -66,27 +68,27 @@ function classifyHttpError(status: number, body: GatewayErrorBody): AiError {
   ) {
     return new AiError(
       "unsupported_model",
-      "The configured FFC-Vision model is not available on the gateway.",
+      "The configured Touchline AI model is not available.",
       status,
     );
   }
   if (status === 429 || code === "rate_limited") {
     return new AiError(
       "rate_limited",
-      "FFC-Vision rate limit reached. Try again shortly.",
+      "Touchline AI rate limit reached. Try again shortly.",
       status,
     );
   }
   if (status === 400 || status === 422 || code === "invalid_request") {
     return new AiError(
       "invalid_request",
-      "FFC-Vision could not process the analysis request.",
+      "Touchline AI could not process the analysis request.",
       status,
     );
   }
   return new AiError(
     "unavailable",
-    "FFC-Vision is currently unavailable.",
+    "Touchline AI is currently unavailable.",
     status >= 100 ? status : undefined,
   );
 }
@@ -117,8 +119,8 @@ async function parseEnvelope(response: Response): Promise<unknown> {
 }
 
 /**
- * One OpenAI-compatible chat completion against the FFC AI Gateway, with the
- * project's timeout/retry policy. Only temporary failures (timeouts, 429,
+ * One OpenAI-compatible chat completion against the private AI gateway, with
+ * the project's timeout/retry policy. Only temporary failures (timeouts, 429,
  * 5xx, connection errors) are retried — auth, unsupported-model and invalid
  * requests fail immediately instead of burning quota.
  */
@@ -140,7 +142,7 @@ export async function chatComplete(options: {
   if (!config.apiKey || !config.baseUrl) {
     throw new AiError(
       "not_configured",
-      "FFC-Vision credentials are not configured on this server.",
+      "Touchline AI credentials are not configured on this server.",
     );
   }
 
@@ -244,8 +246,8 @@ export async function chatComplete(options: {
           lastError = new AiError(
             "invalid_response",
             truncated
-              ? "FFC-Vision hit the token budget before returning the JSON object."
-              : "FFC-Vision returned an empty analysis. Please try again.",
+              ? "Touchline AI hit the token budget before returning the JSON object."
+              : "Touchline AI returned an empty analysis. Please try again.",
           );
         } else {
           return {
@@ -260,14 +262,14 @@ export async function chatComplete(options: {
       if (error instanceof Error && error.name === "AbortError") {
         lastError = new AiError(
           "timeout",
-          "FFC-Vision did not answer in time. Please try again.",
+          "Touchline AI did not answer in time. Please try again.",
         );
       } else if (error instanceof AiError) {
         lastError = error;
       } else {
         lastError = new AiError(
           "unavailable",
-          "FFC-Vision could not be reached. Please try again.",
+          "Touchline AI could not be reached. Please try again.",
         );
       }
     } finally {
@@ -278,66 +280,5 @@ export async function chatComplete(options: {
     await sleep(retryDelayMs(attempt, lastError));
   }
 
-  throw lastError ?? new AiError("unavailable", "FFC-Vision request failed.");
-}
-
-/** Parsed entry from `GET /v1/models`. */
-export interface GatewayModel {
-  id: string;
-}
-
-/**
- * Startup-style connectivity check used by operators and tests: verifies the
- * health probe, then lists the master models this key may use. Throws
- * `AiError` on failure.
- */
-export async function verifyAiConnection(): Promise<GatewayModel[]> {
-  const config = getAiConfig();
-  if (!config.apiKey || !config.baseUrl) {
-    throw new AiError(
-      "not_configured",
-      "FFC-Vision credentials are not configured on this server.",
-    );
-  }
-
-  const root = config.baseUrl.replace(/\/v1\/?$/, "");
-  const health = await fetch(`${root}/healthz`, {
-    cache: "no-store",
-    signal: AbortSignal.timeout(8_000),
-  }).catch(() => null);
-  if (!health?.ok) {
-    throw new AiError("unavailable", "FFC-Vision health probe failed.");
-  }
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10_000);
-  try {
-    const response = await fetch(`${config.baseUrl}/models`, {
-      cache: "no-store",
-      signal: controller.signal,
-      headers: {
-        accept: "application/json",
-        authorization: `Bearer ${config.apiKey}`,
-      },
-    });
-    const body = (await parseEnvelope(response)) as
-      | (GatewayErrorBody & { data?: Array<{ id?: unknown }> })
-      | undefined;
-
-    if (!response.ok) {
-      throw classifyHttpError(response.status, body ?? {});
-    }
-    const models = Array.isArray(body?.data) ? body.data : [];
-    return models
-      .map((entry) => ({ id: String(entry?.id ?? "") }))
-      .filter((entry) => entry.id.length > 0);
-  } catch (error) {
-    if (error instanceof AiError) throw error;
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new AiError("timeout", "FFC-Vision model listing timed out.");
-    }
-    throw new AiError("unavailable", "FFC-Vision could not be reached.");
-  } finally {
-    clearTimeout(timer);
-  }
+  throw lastError ?? new AiError("unavailable", "Touchline AI request failed.");
 }

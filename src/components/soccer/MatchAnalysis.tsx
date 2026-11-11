@@ -45,6 +45,8 @@ export function errorMessageKey(code: string | undefined): keyof (typeof analysi
       return "notFinished";
     case "not_found":
       return "notFound";
+    case "match_not_live":
+      return "notLive";
     case "upstream_error":
       return "upstream";
     default:
